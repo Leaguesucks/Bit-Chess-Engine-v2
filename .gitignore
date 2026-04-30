@@ -39,3 +39,9 @@
 
 # debug information files
 *.dwo
+
+*.vscode
+*.json
+
+# Files that may contains MY sensitive information
+.dpn
