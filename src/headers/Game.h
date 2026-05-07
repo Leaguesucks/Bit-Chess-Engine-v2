@@ -4,20 +4,19 @@
 #include <vector>
 
 #include "General.h"
+#include "BitManipulation.h"
+
+#define BEGIN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 /**
- * @brief Holds the current information of the game, such as the pieces' position, moves
- *        and attacks, etc.
+ * @brief Holds the general information of the game, such as the pieces' positions
  */
 struct BitBoard {
     u64 positions[2][6]; // Positions of each piece on each side
     u64 allPositions[2]; // Positions of all piece in a single bit map on each side
     u8 board[64]; // The board with each piece value on it. Used for fast communication with the GUI
-
-    u32 ply; // The total number of one-half move that has been played
-    u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
+    u32 fly; // The total number of full move that has been played
     u8 side2play; // The side to play
-    u8 enemy2play; // The next (enemy) side to play, which is the inverse of the side to play
 
     /** The castling right for both side
      * 0001 = white king side
@@ -26,10 +25,19 @@ struct BitBoard {
      * 1000 = black queen side
      */
     u8 castlingRights;
-
-    int enPassenSquare; // -1 if none
 };
 
+/**
+ * @brief Holds the information for the engine calculation, such as moves, attacks, etc
+ */
+struct CalBoard {
+    u64 moves[64]; // All possible move for each square. Reset at the begining of each ply
+    u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
+    u64 checkSources; // Stores the sources of check for each side
+    u64 pinned; // Masks of pinned pieces
+    u64 enPassen; // Masks of the enpassen squares, which is the square behind the victim pawn
+    u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
+};
 
 /** 
  * @brief Holds the current state of the game, such as the total number of moves, who
@@ -45,50 +53,35 @@ struct BitBoard {
  *      - 001: Capture
  *      - 010: Enpassen
  *      - 011: Promotion
- *      - 100: Castling
- *      - 101: Pawn move
- * bits 19-21: What captured piece (0 if none)
- * bits 22-24: Promote to what piece (0 if none)
- * bits 25-28: Castling flags:
- *      - 0001: Remove white's king castling right
- *      - 0010: Remove white's queen castling right
- *      - 0100: Remove black's king castling right
- *      - 1000: Remove black's queen castling right
- * bits 29-34: Any Enpassen square that this move "turn off". 0 if none
- * bits 35-63: Redundant
- *      
+ *      - 100: Castling (100 -> king side, 101 -> queen side)
+ *      - 110: Pawn move
+ *      - 111: Double pawn move
+ * bits 19-21: What captured/promoted piece (0 if none)
+ * bits 22-25: Castling flags BEFORE this move
+ * bits 26-31: Redundant
  * ```
  */
 class Game {
     private:
-        struct BitBoard board; // Holds the current information of the game
-        std::vector<u64> moveStacks; // Store the history of moves
-        u64 moves[64]; // All possible move for each square. Reset at the begining of each ply
-        u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
-        u64 checkSources[2]; // Stores the sources of check for each side
+        BitBoard board; // Holds the current information of the game
+        CalBoard calBoard; // Holds the information for the engine calculation
+        std::vector<u32> moveStacks; // Store the history of moves
 
     public:
         /**
-         * @brief Default constructor: Load a new game with the default position
-         */
-        Game();
-
-        /**
          * @brief Load a new game from a FEN
          */
-        Game(const std::string fen);
+        Game(char* fen);
 
         /**
          * @brief Additionally, can also use this method to start a new game from a FEN
          */
-        void setFEN(const std::string fen);
+        void setFEN(char* fen);
 
-        /* Setters and getters. For performance we return the pointers */
+        /* Setters and getters. For performance we return the references */
 
-        u64* getMoves();
-        u64* getCaptures();
-        u64* getCheckSources();
-        BitBoard* getBitBoard();
+        CalBoard* getCalBoard();
+        BitBoard* getBoard();
 
         /**
          * @brief Move a piece
@@ -101,4 +94,43 @@ class Game {
          * @brief Undo a move
          */
         void undo();
+
+        /**
+         * @param square The square to calculate the moves
+         * @return The moves from a square. Used to communicate with the GUI
+         */
+        u64 getMovesOnSquare(int square);
+
+        /**
+         * @param square The square to calculate the captures
+         * @return The captures from a square. Used to communicate with the GUI
+         */
+        u64 getCapturesOnSquare(int square);
+
+    private:
+        /**
+         * @brief Default constructor
+         */
+        Game();
+
+        /**
+         * @brief Set up the piece position from a FEN field
+         * 
+         * @param token The field of the FEN that describes how to set up the pieces
+         */
+        void setPosition(char* token);
+
+        /**
+         * @brief Set the castle right from a FEN field
+         * 
+         * @param token The field of the FEN that describes the castle right
+         */
+        void setCastleRight(char* token);
+
+        /**
+         * @brief Masks the enpassen squares from a FEN field
+         * 
+         * @param token The field of the FEN that describes the enpassen squares
+         */
+        void setEnPassen(char* token);
 };

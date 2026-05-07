@@ -15,7 +15,7 @@ def init():
 
     root = tk.Tk()
     root.title("Chess GUI")
-    root.geometry("800x800+50+50")
+    root.geometry("900x900+50+50")
     root.resizable(False, False)
 
     canvas = tk.Canvas(root, width=800, height=800)

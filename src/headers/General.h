@@ -26,8 +26,6 @@
 #define WEST 6
 #define NW 7
 
-#define BEGIN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-
 /**
  * @note H1 is the LSB while A8 is the MSB
  */
