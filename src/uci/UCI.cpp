@@ -1,14 +1,14 @@
 #include "../headers/UCI.h"
 
 UCI::UCI() {
-    *game = Game(BEGIN); // Allocate on the stack for performance 
+    *game = Game(BEGIN);
 }
 
 UCI::UCI(Game* game) {
     this->game = game;
 }
 
-void UCI::send(char* msg) {
+void UCI::send(const char* msg) {
     printf("%s\n", msg);
 }
 
@@ -20,7 +20,7 @@ std::string UCI::recv() {
 
 void UCI::connect() {
     std::string command = "";
-    char* cstr = new char[BUFFSIZE];
+    char cstr[BUFFSIZE];
 
     memset(cstr, 0, BUFFSIZE);
     while (true) {

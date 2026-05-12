@@ -13,8 +13,8 @@ void MoveGen::initialize() {
 }
 
 void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
-    u64 moves, captures, allies, enemies, pRank, relevantBlockers;
-    int rank, file;
+    u64 moves, captures, allies, enemies, relevantBlockers;
+    int rank, file, pRank;
     
     allies = bb.allPositions[bb.side2play];
     enemies = bb.allPositions[bb.side2play ^ 1];
@@ -51,7 +51,6 @@ void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
 
 void MoveGen::genRawRookBishopMove(BitBoard& bb, CalBoard& cb, bool bishop, int square) {
     u64 allies, enemies, revBlockers, index;
-    BitBoard* bb;
 
     allies = bb.allPositions[bb.side2play];
     enemies = bb.allPositions[bb.side2play ^ 1];

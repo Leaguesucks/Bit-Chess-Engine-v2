@@ -5,16 +5,18 @@ Game::Game() {
     memset(&calBoard, 0, sizeof(calBoard));
 }
 
-Game::Game(char* fen) {
+Game::Game(const char* fen) {
     Game();
     setFEN(fen);
 }
 
-void Game::setFEN(char* fen) {
-    char* token;
+void Game::setFEN(const char* fen) {
+    char* token, fencp[100];
+    u8 count;
 
-    u8 count = 0;
-    while ((token = strtok(fen, " "))) {
+    strncpy(fencp, fen, sizeof(fencp));
+    count = 0;
+    while ((token = strtok(fencp, " "))) {
         switch (count) {
         case 0: // Placement positon
             setPosition(token);

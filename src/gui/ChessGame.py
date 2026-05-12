@@ -1,6 +1,5 @@
 import subprocess
 import tkinter as tk
-from src.uci.UCI import UCI
 from PIL import Image, ImageTk
 
 begin = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # Begin position

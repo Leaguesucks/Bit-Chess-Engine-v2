@@ -104,7 +104,7 @@ namespace Magic {
                     printf("\nAttempt %d failed, retrying...\n", attempt);
                     break;
                 }
-                printf("0x%lxULL,\n", magic_number);
+                printf("0x%llxULL,\n", magic_number);
             }
             if (i >= 64) {
                 printf("\nMagic bishop success!\n\n");
@@ -122,7 +122,7 @@ namespace Magic {
                     printf("\nAttempt %d failed, retrying...\n", attempt);
                     break;
                 }
-                printf("0x%lxULL,\n", magic_number);
+                printf("0x%llxULL,\n", magic_number);
             }
             if (i >= H1) {
                 printf("\nMagic rook success!\n\n");

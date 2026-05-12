@@ -32,7 +32,7 @@ class UCI {
          * @brief Send a message to the GUI
          * @param msg The message to send
          */
-        void send(char* msg);
+        void send(const char* msg);
 
         /**
          * @return The messsage sent from the GUI

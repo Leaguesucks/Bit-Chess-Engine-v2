@@ -72,12 +72,12 @@ class Game {
         /**
          * @brief Load a new game from a FEN
          */
-        Game(char* fen);
+        Game(const char* fen);
 
         /**
          * @brief Additionally, can also use this method to start a new game from a FEN
          */
-        void setFEN(char* fen);
+        void setFEN(const char* fen);
 
         /* Setters and getters. For performance we return the references */
 
