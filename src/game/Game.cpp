@@ -87,6 +87,7 @@ void Game::setPosition(char* token) {
             for (int i = 0; i < 6; i++) {
                 if (piece == P[i]) {
                     BitManipulation::setBit(&board.positions[color][i], row*8 + col);
+                    board.board[row*8 + col] = (color == B) ? piece : toupper(piece);
                     break;
                 }
             }

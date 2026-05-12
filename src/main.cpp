@@ -1,11 +1,12 @@
 #include <iostream>
 
-#include "../../debug/debug.h"
-#include "../headers/General.h"
-#include "../headers/BitManipulation.h"
-#include "../headers/Sliders.h"
-#include "../headers/Magic.h"
-#include"../headers/LookupTable.h"
+#include "../debug/debug.h"
+#include "headers/General.h"
+#include "headers/BitManipulation.h"
+#include "headers/Sliders.h"
+#include "headers/Magic.h"
+#include "headers/LookupTable.h"
+#include "headers/Game.h"
 
 int main() {
     LookupTable::initialize();

@@ -24,18 +24,20 @@ namespace MoveGen {
      * @brief Generate moves for each pieces on each side 
      *        and update it on the bit board
      * 
-     * @param game Holds the current information of the game
+     * @param bb The bit board that holds the current information of the game
+     * @param cb The calculation board to print the moves and captures information
      * @param piece Which piece to generate the moves for
      * @param square The square that this piece is on
      */
-    void genMoves(Game& bb, int piece, int square);
+    void genMoves(BitBoard& bb, CalBoard& cb, int piece, int square);
 
     /**
      * @brief Generate "raw" moves for the rooks and bishops
      * 
-     * @param game Holds the current information of the game
+     * @param bb The bit board that holds the current information of the game
+     * @param cb The calculation board to print the moves and captures information
      * @param bishop True if the piece being evaluated is a bishop, false otherwise
      * @param square The current square the rook/bishop is on
      */
-    void genRawRookBishopMove(Game& game, bool bishop, int square);
+    void genRawRookBishopMove(BitBoard& bb, CalBoard&cb, bool bishop, int square);
 }
