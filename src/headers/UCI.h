@@ -2,7 +2,6 @@
 
 #include <string.h>
 #include <string>
-#include <stdio.h>
 #include <iostream>
 
 #include "General.h"
@@ -12,17 +11,13 @@
 
 /**
  * @brief Handle communication between the engine and the GUI
+ * @todo Get rid of the use of C-like string and switch to std::string for safety
  */
 class UCI {
     private:
         Game* game;
 
     public:
-        /**
-         * @brief Default constructor
-         */
-        UCI();
-
         /**
          * @param game The pointer to the game being played
          */
@@ -50,5 +45,11 @@ class UCI {
          * @brief Process the message from the GUI
          * @param msg The message sent from the GUI
          */
-        void processMsg(char* msg);
+        void processMsg(const char* msg);
+
+        /**
+         * @brief Process the position request
+         * @param msg The message sent from the GUI, which should be a position command
+         */
+        void processPosition(const char* msg);
 };

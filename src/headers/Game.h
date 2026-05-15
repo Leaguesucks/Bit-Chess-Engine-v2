@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <string>
 #include <string.h>
 #include <vector>
 
@@ -26,6 +27,8 @@ struct BitBoard {
      * 1000 = black queen side
      */
     u8 castlingRights;
+    u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
+    char enPassen; // The enPassen square, which is the square behind the victim
 };
 
 /**
@@ -36,8 +39,6 @@ struct CalBoard {
     u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
     u64 checkSources; // Stores the sources of check for each side
     u64 pinned; // Masks of pinned pieces
-    u64 enPassen; // Masks of the enpassen squares, which is the square behind the victim pawn
-    u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
 };
 
 /** 
@@ -78,6 +79,12 @@ class Game {
          * @brief Additionally, can also use this method to start a new game from a FEN
          */
         void setFEN(const char* fen);
+
+        /**
+         * @brief Convert the current state of the game to a fen string
+         * @return A FEN string that represents the current game being played
+         */
+        std::string toFEN();
 
         /* Setters and getters. For performance we return the references */
 

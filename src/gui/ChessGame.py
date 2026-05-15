@@ -2,31 +2,32 @@ import subprocess
 import tkinter as tk
 from PIL import Image, ImageTk
 
-begin = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # Begin position
-cPieces = ["P", "R", "N", "B", "Q", "K", "p", "r", "n", "b", "q", "k"]
-pieceImg = {}
-absPath = str()
+BEGIN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # Begin position
+CPIECES = ["P", "R", "N", "B", "Q", "K", "p", "r", "n", "b", "q", "k"]
 
 class ChessGame:
     '''Launch the chess game GUI'''
-    def __init__(self):
+    def __init__(self, uci):
+        self.pieceImg = {}
+
         self.root = tk.Tk()
         self.canvas = tk.Canvas(self.root, width=800, height=800)
         self.root.title("Chess GUI")
-        self.root.geometry("900x900+50+50")
+        self.root.geometry("800x850+50+50")
         self.root.resizable(False, False)
         self.canvas.pack()
 
         self.pauseButn = tk.Button(
             self.root,
             text="Pause",
-            command=self.openConsole,
+            command=self.openPauseMenu,
             font=("Arial", 12)
         )
 
         self.pauseButn.pack(pady=10)
+        self.uci = uci
 
-    def drawChessBoard(self):
+    def drawChessBoard(self) -> None:
         LIGHT = "#F0D9B5"
         DARK = "#B58863"
 
@@ -45,7 +46,7 @@ class ChessGame:
 
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
 
-    def loadPiecesImg(self):
+    def loadPiecesImg(self) -> None:
         '''Load the pieces image'''
         pieces = [
             "whitepawn",
@@ -66,12 +67,12 @@ class ChessGame:
 
         count = 0
         for piece in pieces:
-            img = Image.open(absPath + path + piece + ".png")
+            img = Image.open(path + piece + ".png")
             img = img.resize((100, 100))
-            pieceImg[cPieces[count]] = ImageTk.PhotoImage(img)
+            self.pieceImg[CPIECES[count]] = ImageTk.PhotoImage(img)
             count += 1
 
-    def drawLabels(self):
+    def drawLabels(self) -> None:
         '''Draw rank (1–8) and file (a–h) labels'''
 
         files = ['a','b','c','d','e','f','g','h']
@@ -99,7 +100,7 @@ class ChessGame:
                 font=("Arial", 10)
             )
 
-    def setFEN(self, fen: str):
+    def setFEN(self, fen: str) -> None:
         '''Set up the chess board from a FEN first field'''
         self.canvas.delete("pieces")
 
@@ -117,70 +118,92 @@ class ChessGame:
                     y = row * 100
                     x = col * 100
 
-                    if p in cPieces:
+                    if p in CPIECES:
                         self.canvas.create_image(
                             x, y,
                             anchor="nw",
-                            image=pieceImg[p],
+                            image=self.pieceImg[p],
                             tags="pieces"
                         )
 
                     col += 1
             row += 1
 
-    def openConsole(self):
-        '''Open pop up console to send command to the engine'''
+    def openPauseMenu(self) -> None:
+        '''Open a pause menu'''
         popUp = tk.Toplevel(self.root)
 
         popUp.title("Pause Menu")
-        popUp.geometry("500x400")
+        popUp.geometry("300x400")
         popUp.resizable(False, False)
 
-        self.outputBox = tk.Text(
+        resumeBtn = tk.Button(
             popUp,
+            text="Resume",
+            width=20,
+            height=2,
+            command=popUp.destroy
+        )
+        resumeBtn.pack(pady=5)
+
+        commandBtn = tk.Button(
+            popUp,
+            text="Command",
+            width=20,
+            height=2,
+            command=self.openCommandConsole
+        )
+        commandBtn.pack(pady=5)
+
+    def openCommandConsole(self) -> None:
+        '''Open the command console'''
+        cs = tk.Toplevel(self.root)
+
+        cs.title("Command console")
+        cs.geometry("500x400")
+        cs.resizable(False, False)
+
+        outputBox = tk.Text(
+            cs,
             height=15,
             width=60
         )
-
-        self.outputBox.pack(pady=10)
+        outputBox.pack(pady=10)
 
         entry = tk.Entry(
-            popUp,
+            cs,
             width=50,
             font=("Arial", 12)
         )
-
         entry.pack(pady=10)
-        
+
         sendBtn = tk.Button(
-            popUp,
-            text="Enter",
-            command=lambda: self.handleConsoleCommand(entry)
+            cs,
+            text="Send",
+            command=lambda: self.getConsoleCommand(entry, outputBox)
         )
-        sendBtn.pack()
+        sendBtn.pack(pady=10)
 
         entry.bind(
             "<Return>",
-            lambda event: self.handleConsoleCommand(entry)
+            lambda event: self.getConsoleCommand(entry, outputBox)
         )
 
-    def handleConsoleCommand(self, entry: tk.Entry):
-        '''Handle the command input'''
+    def getConsoleCommand(self, entry: tk.Entry, output: tk.Text):
+        '''Get the command input'''
         cmd = entry.get().strip()
 
         if cmd:
-            self.outputBox.insert(tk.END, f"> {cmd}\n")
+            output.insert(tk.END, f"> {cmd}\n")
+            self.uci.send(cmd)
+            output.insert(tk.END, f"> {self.uci.recv()}\n")
 
         entry.delete(0, tk.END)
 
-    def execute(self, fen: str):
+    def execute(self, fen: str = BEGIN):
         self.drawChessBoard()
         self.drawLabels()
         self.loadPiecesImg()
         self.setFEN(fen)
 
         self.root.mainloop()
-
-if __name__ == "__main__":
-    game = ChessGame()
-    game.execute(begin)

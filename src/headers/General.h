@@ -13,6 +13,7 @@
 #define ROOK   3
 #define QUEEN  4
 #define KING   5
+#define EMPTY  6
 
 #define W 0
 #define B 1
@@ -40,7 +41,7 @@ typedef enum Square {
     H8, G8, F8, E8, D8, C8, B8, A8,
 } Square;
 
-const std::string squareStr[] = {
+const std::string squareStr[64] = {
     "H1", "G1", "F1", "E1", "D1", "C1", "B1", "A1",
     "H2", "G2", "F2", "E2", "D2", "C2", "B2", "A2",
     "H3", "G3", "F3", "E3", "D3", "C3", "B3", "A3",

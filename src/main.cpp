@@ -1,4 +1,7 @@
 #include <iostream>
+#include <string>
+#include <string.h>
+#include <stdio.h>
 
 #include "../debug/debug.h"
 #include "headers/General.h"
@@ -7,19 +10,19 @@
 #include "headers/Magic.h"
 #include "headers/LookupTable.h"
 #include "headers/Game.h"
+#include "headers/UCI.h"
 
 int main() {
-    LookupTable::initialize();
-    
-    // for (int i = 0; i < 64; i++) {
-    //     for (int j = 0; j < 64; j++) {
-    //         std::cout << "Between square " << squareStr[i] << " and " << squareStr[j] << std::endl;
-    //         printBoard(LookupTable::bitBetween[i][j]);
-    //         getchar();
-    //     }
-    // }
+    std::cout.setf(std::ios::unitbuf);
 
-    printBoard(LookupTable::bitBetween[A1][H8]);
+    // Game game(BEGIN);
+    // UCI uci(&game);
 
+    // uci.connect();
+
+    Game game("7k/6b1/2R5/B2n1Pq1/1p6/3Q4/B3bp2/7K w - - 0 1");
+    std::cout << game.getBoard()->board << std::endl;
+    std::cout << game.toFEN() << std::endl;
+    std::cout << game.getBoard()->fifty << " " << game.getBoard()->fly << std::endl;
     return 0;
 }

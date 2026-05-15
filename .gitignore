@@ -36,12 +36,19 @@
 *.exe
 *.out
 *.app
+bin/
+build/
 
 # debug information files
 *.dwo
 
-*.vscode
+.vscode/
 *.json
 
 # Files that may contains MY sensitive information
 .dpn
+
+# python
+venv/
+__pycache__/
+*.pyc

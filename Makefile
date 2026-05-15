@@ -1,7 +1,10 @@
 CC := g++
-CFLAGS := -Wextra -g --std=c++17 
+CFLAGS := -Wextra -g -O0 --std=c++17 -MMD -MP
+
 SRC := $(shell find src debug -name "*.cpp")
-OBJ := $(SRC:%.cpp=build/%.o)
+OBJ := $(patsubst %.cpp,build/%.o,$(SRC))
+DEP := $(OBJ:.o=.d)
+
 TARGET := bin/main.exe
 
 all: $(TARGET)
@@ -13,6 +16,8 @@ $(TARGET): $(OBJ)
 build/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+-include $(DEP)
 
 clean:
 	rm -rf build bin

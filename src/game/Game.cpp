@@ -5,8 +5,7 @@ Game::Game() {
     memset(&calBoard, 0, sizeof(calBoard));
 }
 
-Game::Game(const char* fen) {
-    Game();
+Game::Game(const char* fen) : Game() {
     setFEN(fen);
 }
 
@@ -15,8 +14,11 @@ void Game::setFEN(const char* fen) {
     u8 count;
 
     strncpy(fencp, fen, sizeof(fencp));
+    memset(&board.board, EMPTY, 64);
+    board.enPassen = -1;
     count = 0;
-    while ((token = strtok(fencp, " "))) {
+    token = strtok(fencp, " ");
+    while (token) {
         switch (count) {
         case 0: // Placement positon
             setPosition(token);
@@ -31,7 +33,7 @@ void Game::setFEN(const char* fen) {
             setEnPassen(token);
             break;
         case 4: // Halfmove clock
-            calBoard.fifty = 100 - strtol(token, NULL, 10);
+            board.fifty = 100 - strtol(token, NULL, 10);
             break;
         case 5: // Fullmove number
             board.fly = strtol(token, NULL, 10);
@@ -42,7 +44,51 @@ void Game::setFEN(const char* fen) {
         }
         
         count++;
+        token = strtok(NULL, " ");
     }
+}
+
+std::string Game::toFEN() {
+    std::string fen = "";
+    int row, col, empty;
+    const char castleSeq[] = {'K', 'Q', 'k', 'q'};
+
+    for (row = 7; row >= 0; row--) { // position field
+        empty = 0;
+        for (col = 7; col >= 0; col--) {
+            if (board.board[row*8 + col] == EMPTY) {
+                empty++;
+                if (col == 0) fen.append(std::to_string(empty));
+            } else {
+                if (empty > 0) fen.append(std::to_string(empty));
+                fen.append(1, board.board[row*8 + col]);
+                empty = 0;                    
+            }
+        }
+        (row > 0) ? fen.append("/") : fen.append(" ");
+    }
+
+    (board.side2play == W) ? fen.append("w ") : fen.append("b ");
+
+    for (int c = 0; c < 4; c++) { // Castle right
+        if (board.castlingRights == 0) {
+            fen.append("-");
+            break;
+        }   
+        if ((board.castlingRights >> c) & 1)
+            fen.append(std::to_string(castleSeq[c]));
+    }
+    fen.append(" ");
+
+    (board.enPassen < 0) ? fen.append("-") : fen.append(squareStr[board.enPassen]);
+    fen.append(" ");
+
+    fen.append(std::to_string(100 - board.fifty));
+    fen.append(" ");
+
+    fen.append(std::to_string(board.fly));
+
+    return fen;
 }
 
 CalBoard* Game::getCalBoard() {
@@ -74,12 +120,13 @@ void Game::setPosition(char* token) {
     int row, col, color;
     const char P[6] = {'p', 'r', 'n', 'b', 'q', 'k'};
 
-    row = col = 0;
-    while ((rank = strtok(token, "/"))) {
-        col = 0;
+    row = col = 7;
+    rank = strtok(token, "/");
+    while (rank) {
+        col = 7;
         for (int p = 0; (piece = rank[p]) != '\0'; p++) {
             if (isdigit(piece)) {
-                col += (piece - '0');
+                col -= (piece - '0');
                 continue;
             }
 
@@ -94,9 +141,10 @@ void Game::setPosition(char* token) {
                 }
             }
 
-            col++;
+            col--;
         }
-        rank++;
+        row--;
+        rank = strtok(NULL, "/");        
     }
 }
 
@@ -119,8 +167,6 @@ void Game::setCastleRight(char* token) {
 }
 
 void Game::setEnPassen(char* token) {
-    calBoard.enPassen = 0;
-
     if (strcmp("-", token) == 0)
         return;
 
@@ -128,5 +174,5 @@ void Game::setEnPassen(char* token) {
     row = token[1] - '1';
     col = 'h' - token[0]; // H1 is the LSB
 
-    BitManipulation::setBit(&calBoard.enPassen, row*8 + col);
+    board.enPassen = row*8 + col;
 }

@@ -1,15 +1,11 @@
 #include "../headers/UCI.h"
 
-UCI::UCI() {
-    *game = Game(BEGIN);
-}
-
 UCI::UCI(Game* game) {
     this->game = game;
 }
 
 void UCI::send(const char* msg) {
-    printf("%s\n", msg);
+    std::cout << msg << std::endl;
 }
 
 std::string UCI::recv() {
@@ -23,26 +19,60 @@ void UCI::connect() {
     char cstr[BUFFSIZE];
 
     memset(cstr, 0, BUFFSIZE);
+    
+    // @todo Implement quiting the engine AFTER finishing the engine
     while (true) {
         command = recv();
-        if (command.compare("quit") == 0) {
-            printf("Quitting!\n");
-            return;
-        }
-        strncpy(cstr, command.c_str(), BUFFSIZE);
+        
+        strncpy(cstr, command.c_str(), BUFFSIZE - 1);
         processMsg(cstr);
-        memset(cstr, 0, BUFFSIZE);
     }
 }
 
-void UCI::processMsg(char* msg) {
-    char* token;
+void UCI::processMsg(const char* msg) {
+    char *token, cmsg[BUFFSIZE];
 
-    if (strcmp(msg, "uci"))
-        send("uci ok");
-    token = strtok(msg, " ");
+    memset(cmsg, 0, BUFFSIZE);
+    strcpy(cmsg, msg);
 
-    if (strcmp(token, "position") == 0) {
-        token = strtok(msg, " ");
+    if (strcmp(cmsg, "uci") == 0) {
+        send("uciok");
+        return;
     }
+
+    token = strtok(cmsg, " ");
+    if (strcmp(token, "position") == 0) {
+        processPosition(msg);
+        return;
+    }
+
+    send(msg);
+}
+
+void UCI::processPosition(const char* msg) {
+    char* token, cmsg[BUFFSIZE];
+    std::string response("position ");
+
+    strcpy(cmsg, msg);
+    token = strtok(cmsg, " "); // "position"
+    token = strtok(NULL, " "); // startpos or fen
+
+    if (strcmp(token, "startpos") == 0) {
+        game->setFEN(BEGIN);
+
+        token = strtok(NULL, " ");
+    } else if (strcmp(token, "fen") == 0) {
+        std::string fen("");
+
+        while ((token = strtok(NULL, " ")) && strcmp(token, "moves") != 0)
+            fen.append(token); // Rebuild the fen
+        game->setFEN(fen.c_str());
+    }
+
+    if (token != NULL && strcmp(token, " moves") == 0) {
+        // @todo Implement later     
+    } 
+
+    response.append(game->toFEN());
+    send(response.c_str());
 }
