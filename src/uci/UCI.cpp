@@ -4,7 +4,7 @@ UCI::UCI(Game* game) {
     this->game = game;
 }
 
-void UCI::send(const char* msg) {
+void UCI::send(std::string msg) {
     std::cout << msg << std::endl;
 }
 
@@ -15,61 +15,53 @@ std::string UCI::recv() {
 }
 
 void UCI::connect() {
-    std::string command = "";
-    char cstr[BUFFSIZE];
-
-    memset(cstr, 0, BUFFSIZE);
+    std::string command;
     
     // @todo Implement quiting the engine AFTER finishing the engine
     while (true) {
         command = recv();
-        
-        strncpy(cstr, command.c_str(), BUFFSIZE - 1);
-        processMsg(cstr);
+        processMsg(command);
     }
 }
 
-void UCI::processMsg(const char* msg) {
-    char *token, cmsg[BUFFSIZE];
+void UCI::processMsg(std::string msg) {
+    std::stringstream ss(msg);
+    std::string token;
 
-    memset(cmsg, 0, BUFFSIZE);
-    strcpy(cmsg, msg);
-
-    if (strcmp(cmsg, "uci") == 0) {
-        send("uciok");
-        return;
-    }
-
-    token = strtok(cmsg, " ");
-    if (strcmp(token, "position") == 0) {
-        processPosition(msg);
-        return;
+    while (ss >> token) {
+        if (token.compare("uci") == 0) {
+            send("uciok");
+            return;
+        } else if (token.compare("position") == 0) {
+            processPosition(msg);
+            return;
+        }
     }
 
     send(msg);
 }
 
-void UCI::processPosition(const char* msg) {
-    char* token, cmsg[BUFFSIZE];
+void UCI::processPosition(std::string msg) {
+    std::stringstream ss(msg);
+    std::string token;
     std::string response("position__"); // For simplicity fields in a response are seperated by 2 underscores
 
-    strcpy(cmsg, msg);
-    token = strtok(cmsg, " "); // "position"
-    token = strtok(NULL, " "); // startpos or fen
+    ss >> token; // "position"
+    ss >> token; // startpos or fen
 
-    if (strcmp(token, "startpos") == 0) {
+    if (token.compare("startpos") == 0) {
         game->setFEN(BEGIN);
 
-        token = strtok(NULL, " ");
-    } else if (strcmp(token, "fen") == 0) {
+        ss >> token;
+    } else if (token.compare("fen") == 0) {
         std::string fen("");
 
-        while ((token = strtok(NULL, " ")) && strcmp(token, "moves") != 0)
+        while ((ss >> token) && token.compare("moves") != 0)
             fen.append(token); // Rebuild the fen
-        game->setFEN(fen.c_str());
+        game->setFEN(fen);
     }
 
-    if (token != NULL && strcmp(token, " moves") == 0) {
+    if (ss >> token) {
         // @todo Implement later     
     } 
 

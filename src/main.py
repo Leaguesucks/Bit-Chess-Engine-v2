@@ -2,13 +2,20 @@ from gui.ChessGame import ChessGame
 from uci.UCI import UCI
 import signal
 
-def handleSend(signum, frame) -> None:
+def handleConsoleSend(signum, frame) -> None:
     '''Handle the event that a command is entered'''
     game.printConsole(game.command)
     uci.send(game.command)
     response = uci.recv()
     game.printConsole(response)
     processResponse(response)
+
+def handleGUIsend(signum, frame) -> None:
+    '''Handle the event that a command is sent by the GUI process itself'''
+    print(f">{game.command}") # debug
+    uci.send(game.command)
+    response = uci.recv()
+    print(f">{response}") # debug
 
 def processResponse(response: str) -> None:
     '''Process the response received from the engine'''
@@ -20,8 +27,8 @@ def processResponse(response: str) -> None:
 if __name__ == "__main__":
     global uci, game
 
-    signal.signal(signal.SIGUSR1, handleSend)
-
+    signal.signal(signal.SIGUSR1, handleConsoleSend)
+    signal.signal(signal.SIGUSR2, handleGUIsend)
 
     uci = UCI()
     game = ChessGame(uci)

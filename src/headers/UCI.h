@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string.h>
+#include <sstream>
 #include <string>
 #include <iostream>
 
@@ -27,7 +27,7 @@ class UCI {
          * @brief Send a message to the GUI
          * @param msg The message to send
          */
-        void send(const char* msg);
+        void send(std::string msg);
 
         /**
          * @return The messsage sent from the GUI
@@ -45,11 +45,11 @@ class UCI {
          * @brief Process the message from the GUI
          * @param msg The message sent from the GUI
          */
-        void processMsg(const char* msg);
+        void processMsg(std::string msg);
 
         /**
          * @brief Process the position request
          * @param msg The message sent from the GUI, which should be a position command
          */
-        void processPosition(const char* msg);
+        void processPosition(std::string msg);
 };

@@ -1,4 +1,5 @@
 import signal
+import math
 import tkinter as tk
 from PIL import Image, ImageTk
 
@@ -121,15 +122,29 @@ class ChessGame:
                     x = col * 100
 
                     if p in CPIECES:
-                        self.canvas.create_image(
+                        piece = self.canvas.create_image(
                             x, y,
                             anchor="nw",
                             image=self.pieceImg[p],
-                            tags="pieces"
+                            tags=("pieces", "draggable")
+                        )
+
+                        self.canvas.tag_bind(
+                            piece,
+                            "<Button-1>",
+                            lambda event, piece=piece: self.onPieceClick(event, piece)
                         )
 
                     col += 1
             row += 1
+
+    def onPieceClick(self, event, piece: int) -> None:
+        '''The actions to take when a piece is clicked'''
+        col = 7 - math.floor(event.x / 100)
+        row = 7 - math.floor(event.y / 100)
+        square = row*8 + col
+        self.command = f"showMove {square}"
+        signal.raise_signal(signal.SIGUSR2)
 
     def openPauseMenu(self) -> None:
         '''Open a pause menu'''
