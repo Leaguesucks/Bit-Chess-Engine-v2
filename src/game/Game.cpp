@@ -74,7 +74,7 @@ std::string Game::toFEN() {
             break;
         }   
         if ((board.castlingRights >> c) & 1)
-            fen.append(std::to_string(castleSeq[c]));
+            fen.append(1, castleSeq[c]);
     }
     fen.append(" ");
 
@@ -150,12 +150,11 @@ void Game::setCastleRight(std::string token) {
     if (token.compare("-") == 0) 
         return;
 
-    char c;
     const char castle[4] = {'K', 'Q', 'k', 'q'};
-    for (int i = 0; (c = token[i]) != '\0'; i++) {
+    for (char c : token) {
         for (int j = 0; j < 4; j++) {
             if (c == castle[j]) {
-                board.castlingRights ^= (1 << j);
+                board.castlingRights |= (1 << j);
                 break;
             }
         }

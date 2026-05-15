@@ -1,5 +1,5 @@
 import subprocess
-import os
+import signal
 
 class UCI:
     '''Handle communication with the engine using UCI protocol'''
@@ -11,7 +11,6 @@ class UCI:
                                     stderr=subprocess.PIPE,
                                     text=True,
                                     bufsize=1)
-        # subprocess.run(["./bin/main.exe"])
 
     def send(self, msg: str) -> None:
         '''Send commands to the engine'''

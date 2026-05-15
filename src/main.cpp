@@ -15,13 +15,10 @@
 int main() {
     std::cout.setf(std::ios::unitbuf);
 
-    // Game game(BEGIN);
-    // UCI uci(&game);
+    Game game(BEGIN);
+    UCI uci(&game);
 
-    // uci.connect();
+    uci.connect();
 
-    Game game("2k2n2/8/1Nrb1r1B/1P2B3/2RP2q1/2Q5/2b5/KN6 w - - 0 1");
-    std::cout << game.getBoard()->board << std::endl;
-    std::cout << game.toFEN() << std::endl;
     return 0;
 }

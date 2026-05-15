@@ -1,4 +1,4 @@
-import subprocess
+import signal
 import tkinter as tk
 from PIL import Image, ImageTk
 
@@ -25,6 +25,9 @@ class ChessGame:
         )
 
         self.pauseButn.pack(pady=10)
+        self.command = str()
+        self.output = tk.Text()
+        self.entry = tk.Entry()
 
     def drawChessBoard(self) -> None:
         LIGHT = "#F0D9B5"
@@ -168,6 +171,7 @@ class ChessGame:
             width=60
         )
         outputBox.pack(pady=10)
+        self.output = outputBox
 
         entry = tk.Entry(
             cs,
@@ -175,29 +179,34 @@ class ChessGame:
             font=("Arial", 12)
         )
         entry.pack(pady=10)
+        self.entry = entry
 
         sendBtn = tk.Button(
             cs,
             text="Send",
-            command=lambda: self.getConsoleCommand(entry, outputBox)
+            command=lambda: self.getConsoleCommand()
         )
         sendBtn.pack(pady=10)
 
         entry.bind(
             "<Return>",
-            lambda event: self.getConsoleCommand(entry, outputBox)
+            lambda event: self.getConsoleCommand()
         )
 
-    def getConsoleCommand(self, entry: tk.Entry, output: tk.Text):
+    def getConsoleCommand(self) -> None:
         '''Get the command input'''
-        cmd = entry.get().strip()
+        cmd = self.entry.get().strip()
 
         if cmd:
-            output.insert(tk.END, f"> {cmd}\n")
+            self.command = cmd
+            signal.raise_signal(signal.SIGUSR1) # Notice the process that a command has been issued
 
-        entry.delete(0, tk.END)
+    def printConsole(self, cmd: str) -> None:
+        '''Print a command on the command console'''
+        self.output.insert(tk.END, f">{cmd}\n")
+        self.entry.delete(0, tk.END)
 
-    def execute(self, fen: str = BEGIN):
+    def execute(self, fen: str = BEGIN) -> None:
         self.drawChessBoard()
         self.drawLabels()
         self.loadPiecesImg()

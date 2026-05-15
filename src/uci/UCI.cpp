@@ -51,7 +51,7 @@ void UCI::processMsg(const char* msg) {
 
 void UCI::processPosition(const char* msg) {
     char* token, cmsg[BUFFSIZE];
-    std::string response("position ");
+    std::string response("position__"); // For simplicity fields in a response are seperated by 2 underscores
 
     strcpy(cmsg, msg);
     token = strtok(cmsg, " "); // "position"
