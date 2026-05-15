@@ -1,9 +1,10 @@
 #pragma once
 
+#include <sstream>
 #include <cstring>
 #include <string>
-#include <string.h>
 #include <vector>
+#include <iostream>
 
 #include "General.h"
 #include "BitManipulation.h"
@@ -73,12 +74,12 @@ class Game {
         /**
          * @brief Load a new game from a FEN
          */
-        Game(const char* fen);
+        Game(std::string fen);
 
         /**
          * @brief Additionally, can also use this method to start a new game from a FEN
          */
-        void setFEN(const char* fen);
+        void setFEN(std::string fen);
 
         /**
          * @brief Convert the current state of the game to a fen string
@@ -126,19 +127,19 @@ class Game {
          * 
          * @param token The field of the FEN that describes how to set up the pieces
          */
-        void setPosition(char* token);
+        void setPosition(std::string token);
 
         /**
          * @brief Set the castle right from a FEN field
          * 
          * @param token The field of the FEN that describes the castle right
          */
-        void setCastleRight(char* token);
+        void setCastleRight(std::string token);
 
         /**
          * @brief Masks the enpassen squares from a FEN field
          * 
          * @param token The field of the FEN that describes the enpassen squares
          */
-        void setEnPassen(char* token);
+        void setEnPassen(std::string token);
 };

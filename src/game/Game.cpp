@@ -5,47 +5,45 @@ Game::Game() {
     memset(&calBoard, 0, sizeof(calBoard));
 }
 
-Game::Game(const char* fen) : Game() {
+Game::Game(std::string fen) : Game() {
     setFEN(fen);
 }
 
-void Game::setFEN(const char* fen) {
-    char* token, fencp[100];
-    u8 count;
+void Game::setFEN(std::string fen) {
+    std::stringstream ss(fen);
+    std::string token;
+    int field = 0;
 
-    strncpy(fencp, fen, sizeof(fencp));
-    memset(&board.board, EMPTY, 64);
+    memset(board.board, EMPTY, sizeof(board.board));
     board.enPassen = -1;
-    count = 0;
-    token = strtok(fencp, " ");
-    while (token) {
-        switch (count) {
-        case 0: // Placement positon
+    while (ss >> token) {
+        switch (field)
+        {
+        case 0:
             setPosition(token);
             break;
-        case 1: // Active color
+        case 1:
             board.side2play = (token[0] == 'w') ? W : B;
             break;
-        case 2: // Castle right
+        case 2:
             setCastleRight(token);
             break;
-        case 3: // EnPassen square
+        case 3:
             setEnPassen(token);
             break;
-        case 4: // Halfmove clock
-            board.fifty = 100 - strtol(token, NULL, 10);
+        case 4:
+            board.fifty = 100 - std::stoi(token);
             break;
-        case 5: // Fullmove number
-            board.fly = strtol(token, NULL, 10);
+        case 5:
+            board.fly = std::stoi(token);
             break;
         default:
-            perror("Invalid number of field!");
-            return;
+            std::cerr << "Invalid number of fields for a FEN" << std::endl;
+            break;
         }
-        
-        count++;
-        token = strtok(NULL, " ");
+        field++;
     }
+    
 }
 
 std::string Game::toFEN() {
@@ -115,43 +113,41 @@ u64 Game::getCapturesOnSquare(int square) {
     return calBoard.captures[square];
 }
 
-void Game::setPosition(char* token) {
-    char piece, *rank;
+void Game::setPosition(std::string token) {
+    char piece;
     int row, col, color;
+    std::string rank;
+    std::stringstream ss(token);
     const char P[6] = {'p', 'r', 'n', 'b', 'q', 'k'};
 
     row = col = 7;
-    rank = strtok(token, "/");
-    while (rank) {
+    while (std::getline(ss, rank, '/')) {
         col = 7;
-        for (int p = 0; (piece = rank[p]) != '\0'; p++) {
+        for (char piece : rank) {
             if (isdigit(piece)) {
                 col -= (piece - '0');
-                continue;
-            }
+            } else {
+                color = (islower(piece)) ? B : W;
+                piece = tolower(piece);
 
-            color = (islower(piece)) ? B : W;
-            piece = tolower(piece);
-            
-            for (int i = 0; i < 6; i++) {
-                if (piece == P[i]) {
-                    BitManipulation::setBit(&board.positions[color][i], row*8 + col);
-                    board.board[row*8 + col] = (color == B) ? piece : toupper(piece);
-                    break;
+                for (int i = 0; i < 6; i++) {
+                    if (piece == P[i]) {
+                        BitManipulation::setBit(&board.positions[color][i], row*8 + col);
+                        board.board[row*8 + col] = (color == B) ? piece : toupper(piece);
+                        break;
+                    }
                 }
+                col--;
             }
-
-            col--;
         }
-        row--;
-        rank = strtok(NULL, "/");        
+        row--;       
     }
 }
 
-void Game::setCastleRight(char* token) {
+void Game::setCastleRight(std::string token) {
     board.castlingRights = 0;
 
-    if (strcmp("-", token) == 0) 
+    if (token.compare("-") == 0) 
         return;
 
     char c;
@@ -166,12 +162,12 @@ void Game::setCastleRight(char* token) {
     }
 }
 
-void Game::setEnPassen(char* token) {
-    if (strcmp("-", token) == 0)
+void Game::setEnPassen(std::string token) {
+    if (token.compare("-") == 0)
         return;
 
     int row, col;
-    row = token[1] - '1';
+    row = 7 - (token[1] - '1');
     col = 'h' - token[0]; // H1 is the LSB
 
     board.enPassen = row*8 + col;

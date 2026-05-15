@@ -20,9 +20,8 @@ int main() {
 
     // uci.connect();
 
-    Game game("7k/6b1/2R5/B2n1Pq1/1p6/3Q4/B3bp2/7K w - - 0 1");
+    Game game("2k2n2/8/1Nrb1r1B/1P2B3/2RP2q1/2Q5/2b5/KN6 w - - 0 1");
     std::cout << game.getBoard()->board << std::endl;
     std::cout << game.toFEN() << std::endl;
-    std::cout << game.getBoard()->fifty << " " << game.getBoard()->fly << std::endl;
     return 0;
 }

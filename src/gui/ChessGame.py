@@ -25,7 +25,6 @@ class ChessGame:
         )
 
         self.pauseButn.pack(pady=10)
-        self.uci = uci
 
     def drawChessBoard(self) -> None:
         LIGHT = "#F0D9B5"
@@ -195,8 +194,6 @@ class ChessGame:
 
         if cmd:
             output.insert(tk.END, f"> {cmd}\n")
-            self.uci.send(cmd)
-            output.insert(tk.END, f"> {self.uci.recv()}\n")
 
         entry.delete(0, tk.END)
 
