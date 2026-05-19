@@ -66,19 +66,23 @@ namespace BitManipulation {
         std::string encode;
         int empty = 0;
 
-        for (int square = 63; square >= 0; square--) {
-            if (!getBit(b, square)) {
-                empty++;
-                
-                if (square == 0) {
-                    encode.append(std::to_string(empty));
-                    return encode;
+        for (int row = 7; row >= 0; row--) {
+            for (int col = 7; col >= 0; col--) {
+                if (!getBit(b, row*8 + col)) {
+                    empty++;
+                    
+                    if (col == 0)
+                        encode.append(std::to_string(empty));
+                } else {
+                    if (empty > 0) 
+                        encode.append(std::to_string(empty));
+                    empty = 0;
+                    encode.append("x");
                 }
-            } else {
-                if (empty > 0) encode.append(std::to_string(empty));
-                empty = 0;
-                encode.append("x");
             }
+            empty = 0;
+            if (row > 0)
+                encode.append("/");
         }
 
         return encode;

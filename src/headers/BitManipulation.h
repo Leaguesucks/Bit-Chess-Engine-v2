@@ -107,7 +107,6 @@ namespace BitManipulation {
      * 
      * @param b The bit field, in this case an u64 number, to encode
      * @return The masked squares in a bit fields encoded as a FEN-styled string
-     * @note e.g., 2x60x1 means the mask squares are c8 and g1
      */
     std::string encodeMaskBits(u64 b);
 }

@@ -76,11 +76,6 @@ class Game {
 
     private:
         /**
-         * @brief Default constructor
-         */
-        Game();
-
-        /**
          * @brief Set up the piece position from a FEN field
          * 
          * @param token The field of the FEN that describes how to set up the pieces
@@ -105,4 +100,9 @@ class Game {
          * @brief Calculate moves for the side to play
          */
         void calculateMoves();
+
+        /**
+         * @brief Clean up i.e., set all members to zero
+         */
+        void reset();
 };

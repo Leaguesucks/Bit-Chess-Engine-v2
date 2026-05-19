@@ -158,27 +158,31 @@ class ChessGame:
         if len(color) == 0 or len(encode) == 0:
             return
         
-        index, square = 0, 0
-        
-        while square < 64 and index < len(encode):
-            if encode[index].isdigit():
-                square += int(encode[index])
-            else:
-                row = math.floor(square / 8) * 100 + 50
-                col = (square % 8) * 100 + 50
-                radius = 15
- 
-                self.canvas.create_oval(
-                    col - radius,
-                    row - radius,
-                    col + radius,
-                    row + radius,
-                    fill=color,
-                    outline="",
-                    tags=(f"{color}_masks", "masks")
-                )
-                square += 1
-            index += 1
+        emptyCol = 0
+        board = encode.split("/")
+
+        rowNum = 0
+        for rowStr in board:
+            for p in rowStr:
+                if p.isdigit():
+                    emptyCol += int(p)
+                else:
+                    row = rowNum * 100 + 50
+                    col = emptyCol * 100 + 50
+                    radius = 15
+    
+                    self.canvas.create_oval(
+                        col - radius,
+                        row - radius,
+                        col + radius,
+                        row + radius,
+                        fill=color,
+                        outline="",
+                        tags=(f"{color}_masks", "masks")
+                    )
+                    emptyCol += 1 # Re-use of variable for convenience
+            emptyCol = 0
+            rowNum += 1
 
     def openPauseMenu(self) -> None:
         '''Open a pause menu'''
@@ -262,6 +266,8 @@ class ChessGame:
         self.maskSquares("orange", captures)
 
         self.canvas.tag_raise("pieces")
+        self.canvas.tag_raise("grey_masks")
+        self.canvas.tag_raise("orange_masks")
 
     def execute(self, fen: str = BEGIN) -> None:
         self.loadImg()

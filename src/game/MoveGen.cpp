@@ -46,6 +46,12 @@ void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
     case KNIGHT:
         cb.captures[square] = LookupTable::knightAttacks[square] & enemies;
         cb.moves[square]= LookupTable::knightAttacks[square] & (~(allies | enemies));
+        // std::cerr << squareStr[square] << std::endl;
+        // printBoard(LookupTable::knightAttacks[square], std::cerr);
+        // printBoard(LookupTable::knightAttacks[square] & ~ (allies | enemies), std::cerr);
+        // printBoard(cb.moves[square], std::cerr);
+        // printBoard(allies, std::cerr);
+        // printBoard(enemies, std::cerr);
         break;
     default:
         return;
@@ -67,12 +73,5 @@ void MoveGen::genRawRookBishopMove(BitBoard& bb, CalBoard& cb, bool bishop, int 
         revBlockers = Sliders::relevantRookAttacks[square] & (allies | enemies);
         index = (revBlockers * LookupTable::ROOK_MAGIC_NUMBERS[square]) >> (64 - Sliders::NUM_ROOK_RELEVANT_SQUARES[square]);
         cb.moves[square] = LookupTable::rookAttacks[square][index];
-        //std::cerr << squareStr[square] << std::endl;
-        //printBoard(Sliders::relevantRookAttacks[square], std::cerr);
-        // printBoard(allies, std::cerr);
-        // printBoard(enemies, std::cerr);
-        // printBoard(Sliders::relevantRookAttacks[square] & (allies | enemies), std::cerr);
-        // printBoard(LookupTable::rookAttacks[square][index], std::cerr);
-        // printBoard(Sliders::getBlockedRookAttacks(Sliders::relevantRookAttacks[square] & (allies | enemies), square), std::cerr);
     }
 }

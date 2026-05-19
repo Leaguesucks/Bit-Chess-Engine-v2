@@ -1,15 +1,12 @@
 #include "../headers/Game.h"
 
-Game::Game() {
-    memset(&board, 0, sizeof(board));
-    memset(&calBoard, 0, sizeof(calBoard));
-}
-
-Game::Game(std::string fen) : Game() {
+Game::Game(std::string fen) {
     setFEN(fen);
 }
 
 void Game::setFEN(std::string fen) {
+    reset();
+
     std::stringstream ss(fen);
     std::string token;
     int field = 0;
@@ -179,4 +176,11 @@ void Game::calculateMoves() {
             MoveGen::genMoves(board, calBoard, piece, square);
         }
     }
+}
+
+void Game::reset() {
+    memset(&board, 0, sizeof(board));
+    memset(&calBoard, 0, sizeof(calBoard));
+    if (!moveStacks.empty())
+        moveStacks.clear();
 }
