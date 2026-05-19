@@ -141,5 +141,5 @@ namespace Sliders {
      * @param rev_attacks The relevant attacks map of the rook/bishop
      * @return The relevant squares variation of a relevant attacks map given an index
      */
-    u64 findRelevantSquares(u32 index, u64 rev_attacks);
+    u64 findRelevantMasks(u32 index, u64 rev_attacks);
 }

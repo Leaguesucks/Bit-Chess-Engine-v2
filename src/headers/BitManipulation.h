@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "General.h"
 
 /**
@@ -98,4 +100,14 @@ namespace BitManipulation {
      * @return The most significant bit-index that has been set to "1"
      */
     int getMSSB(u64 b);
+
+    /**
+     * @brief Encode the bit masks into a style that closely resembles the FEN position field.
+     * @brief Any masked square is encoded with 'x' and between them are the number of unmasked squares
+     * 
+     * @param b The bit field, in this case an u64 number, to encode
+     * @return The masked squares in a bit fields encoded as a FEN-styled string
+     * @note e.g., 2x60x1 means the mask squares are c8 and g1
+     */
+    std::string encodeMaskBits(u64 b);
 }

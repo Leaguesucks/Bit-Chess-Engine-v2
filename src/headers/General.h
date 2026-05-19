@@ -1,19 +1,14 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
-#define u8 unsigned char
-#define u16 unsigned short
-#define u32 unsigned int
-#define u64 unsigned long long
+#include "../../debug/debug.h"
 
-#define PAWN   0
-#define KNIGHT 1
-#define BISHOP 2
-#define ROOK   3
-#define QUEEN  4
-#define KING   5
-#define EMPTY  6
+#define u8 uint8_t
+#define u16 uint16_t
+#define u32 uint32_t
+#define u64 uint64_t
 
 #define W 0
 #define B 1
@@ -26,6 +21,10 @@
 #define SW 5
 #define WEST 6
 #define NW 7
+
+typedef enum Piece {
+    PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING, EMPTY
+} Piece;
 
 /**
  * @note H1 is the LSB while A8 is the MSB
@@ -50,4 +49,35 @@ const std::string squareStr[64] = {
     "H6", "G6", "F6", "E6", "D6", "C6", "B6", "A6",
     "H7", "G7", "F7", "E7", "D7", "C7", "B7", "A7",
     "H8", "G8", "F8", "E8", "D8", "C8", "B8", "A8",
+};
+
+/**
+ * @brief Holds the general information of the game, such as the pieces' positions
+ */
+struct BitBoard {
+    u64 positions[2][6]; // Positions of each piece on each side
+    u64 allPositions[2]; // Positions of all piece in a single bit map on each side
+    u8 board[64]; // The board with each piece value on it. Used for fast communication with the GUI
+    u32 fly; // The total number of full move that has been played
+    u8 side2play; // The side to play
+
+    /** The castling right for both side
+     * 0001 = white king side
+     * 0010 = white queen side
+     * 0100 = black king side
+     * 1000 = black queen side
+     */
+    u8 castlingRights;
+    u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
+    char enPassen; // The enPassen square, which is the square behind the victim
+};
+
+/**
+ * @brief Holds the information for the engine calculation, such as moves, attacks, etc
+ */
+struct CalBoard {
+    u64 moves[64]; // All possible move for each square. Reset at the begining of each ply
+    u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
+    u64 checkSources; // Stores the sources of check for each side
+    u64 pinned; // Masks of pinned pieces
 };

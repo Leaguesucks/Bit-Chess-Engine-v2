@@ -91,41 +91,42 @@ u64 Sliders::getBlockedBishopAttacks(u64 blockers, int square) {
 u64 Sliders::getBlockedRookAttacks(u64 blockers, int square) {
     u64 attacks = 0ULL;
 
-    int curRk = square / 8; // Current rank (0-7, top to bottom)
+    int curRk = square / 8; // Current rank (0-7, bottom to top)
     int curFl = square % 8; // Current file (0-7, left to right)
+    int rank, file;
 
-    for (int file = curFl - 1, decrement = 1; file >= 0; file--, decrement++) {
-        BitManipulation::setBit(&attacks, square - decrement);
-        if (BitManipulation::getBit(blockers, square - decrement) != 0) 
+    for (int file = curFl - 1, rank = curRk; file >= 0; file--) { // Right
+        BitManipulation::setBit(&attacks, rank*8 + file);
+        if (BitManipulation::getBit(blockers, rank*8 + file)) 
             break; // Blocker encountered 
     }
-    for (int file = curFl + 1, increment = 1; file <= 7; file++, increment++) { // Right
-        BitManipulation::setBit(&attacks, square + increment);
-        if (BitManipulation::getBit(blockers, square + increment) != 0) 
+    for (int file = curFl + 1, rank = curRk; file <= 7; file++) { // Left
+        BitManipulation::setBit(&attacks, rank*8 + file);
+        if (BitManipulation::getBit(blockers, rank*8 + file)) 
             break; // Blocker encountered 
     }
-    for (int rank = curRk - 1, decrement = 1; rank >= 0; rank--, decrement++) { // Down
-        BitManipulation::setBit(&attacks, square - 8*decrement); 
-        if (BitManipulation::getBit(blockers, square - 8*decrement) != 0) 
+    for (int rank = curRk - 1, file = curFl; rank >= 0; rank--) { // Down
+        BitManipulation::setBit(&attacks, rank*8 + file); 
+        if (BitManipulation::getBit(blockers, rank*8 + file)) 
             break; // Blocker encountered
     }
-    for (int rank = curRk + 1, increment = 1; rank <= 7; rank++, increment++) { // Up
-        BitManipulation::setBit(&attacks, square + 8*increment); 
-        if (BitManipulation::getBit(blockers, square + 8*increment) != 0) 
+    for (int rank = curRk + 1, file = curFl; rank <= 7; rank++) { // Up
+        BitManipulation::setBit(&attacks, rank*8 + file); 
+        if (BitManipulation::getBit(blockers, rank*8 + file)) 
             break; // Blocker encountered
     }
 
     return attacks;    
 }
 
-u64 Sliders::findRelevantSquares(u32 index, u64 rev_attacks) {
+u64 Sliders::findRelevantMasks(u32 index, u64 rev_attacks) {
     u64 rev_squares = 0ULL;
     int numBits = BitManipulation::countBit(rev_attacks); // Number of relevant attacks
 
     for (int i = 0; i < numBits; i++) {
         int square = BitManipulation::getLSSB(rev_attacks);
         BitManipulation::popBit(&rev_attacks, square);
-        if ((index & (1 << i)) != 0) 
+        if ((index & (1U << i))) 
             BitManipulation::setBit(&rev_squares, square);
     }
 

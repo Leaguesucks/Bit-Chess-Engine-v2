@@ -40,7 +40,7 @@ void LookupTable::initRookBishopAttacks() {
 
         // Load up the bishop lookup table
         for (u32 i = 0; i < Num_Bishop_Relevant_Squares_Variations; i++) {
-            u64 Relevant_Squares = Sliders::findRelevantSquares(i, Sliders::relevantBishopAttacks[square]);
+            u64 Relevant_Squares = Sliders::findRelevantMasks(i, Sliders::relevantBishopAttacks[square]);
             u64 LookUp_Index = (Relevant_Squares * BISHOP_MAGIC_NUMBERS[square]) >> (64 - Sliders::NUM_BISHOP_RELEVANT_SQUARES[square]);
             
             if (bishopAttacks[square][LookUp_Index] == 0ULL)
@@ -49,7 +49,7 @@ void LookupTable::initRookBishopAttacks() {
 
         // Load up the rook lookup table
         for (u32 i = 0; i < Num_Rook_Relevant_Squares_Variations; i++) {
-            u64 Relevant_Squares = Sliders::findRelevantSquares(i, Sliders::relevantRookAttacks[square]);
+            u64 Relevant_Squares = Sliders::findRelevantMasks(i, Sliders::relevantRookAttacks[square]);
             u64 LookUp_Index = (Relevant_Squares * ROOK_MAGIC_NUMBERS[square]) >> (64 - Sliders::NUM_ROOK_RELEVANT_SQUARES[square]);
             
             if (rookAttacks[square][LookUp_Index] == 0ULL)

@@ -26,22 +26,28 @@ void UCI::connect() {
 
 void UCI::processMsg(std::string msg) {
     std::stringstream ss(msg);
-    std::string token;
+    std::string token, response;
+    int square;
 
-    while (ss >> token) {
-        if (token.compare("uci") == 0) {
-            send("uciok");
-            return;
-        } else if (token.compare("position") == 0) {
-            processPosition(msg);
-            return;
-        }
+    ss >> token;
+    if (token.compare("uci") == 0) {
+        response = "uciok";
+    } else if (token.compare("position") == 0) {
+        response = processPosition(msg);
+    } else if (token.compare("showMove") == 0) {
+        ss >> token;
+        square = std::stoi(token);
+        response.append("showMove__moves__");
+        response.append(BitManipulation::encodeMaskBits(game->getCalBoard()->moves[square]));
+        printBoard(game->getCalBoard()->moves[square], std::cerr);
+        response.append("__captures__");
+        response.append(BitManipulation::encodeMaskBits(game->getCalBoard()->captures[square]));
     }
 
-    send(msg);
+    send(response);
 }
 
-void UCI::processPosition(std::string msg) {
+std::string UCI::processPosition(std::string msg) {
     std::stringstream ss(msg);
     std::string token;
     std::string response("position__"); // For simplicity fields in a response are seperated by 2 underscores
@@ -61,10 +67,10 @@ void UCI::processPosition(std::string msg) {
         game->setFEN(fen);
     }
 
-    if (ss >> token) {
+    while (ss >> token) {
         // @todo Implement later     
     } 
 
     response.append(game->toFEN());
-    send(response.c_str());
+    return response;
 }

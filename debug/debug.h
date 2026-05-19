@@ -1,5 +1,6 @@
-#include "../src/headers/General.h"
+#pragma once
 
+#include <cstdint>
 #include <iostream>
 
 #define COLOR(code) "\033[" code "m"
@@ -19,8 +20,9 @@
  * Print an u64 number in a chess board representation to stdout
  * 
  * @param b The bit board to be printed
+ * @param out Where to print the board
  * @note Square A8 is MSB and H1 is LSB
  */
-void printBoard(u64 b);
+void printBoard(uint64_t b, std::ostream & out);
 
 

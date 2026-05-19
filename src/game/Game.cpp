@@ -16,6 +16,7 @@ void Game::setFEN(std::string fen) {
 
     memset(board.board, EMPTY, sizeof(board.board));
     board.enPassen = -1;
+    board.castlingRights = 0;
     while (ss >> token) {
         switch (field)
         {
@@ -43,7 +44,7 @@ void Game::setFEN(std::string fen) {
         }
         field++;
     }
-    
+    calculateMoves();
 }
 
 std::string Game::toFEN() {
@@ -105,14 +106,6 @@ void Game::undo() {
 
 }
 
-u64 Game::getMovesOnSquare(int square) {
-    return calBoard.moves[square];
-}
-
-u64 Game::getCapturesOnSquare(int square) {
-    return calBoard.captures[square];
-}
-
 void Game::setPosition(std::string token) {
     char piece;
     int row, col, color;
@@ -133,6 +126,7 @@ void Game::setPosition(std::string token) {
                 for (int i = 0; i < 6; i++) {
                     if (piece == P[i]) {
                         BitManipulation::setBit(&board.positions[color][i], row*8 + col);
+                        board.allPositions[color] |= board.positions[color][i];
                         board.board[row*8 + col] = (color == B) ? piece : toupper(piece);
                         break;
                     }
@@ -170,4 +164,19 @@ void Game::setEnPassen(std::string token) {
     col = 'h' - token[0]; // H1 is the LSB
 
     board.enPassen = row*8 + col;
+}
+
+void Game::calculateMoves() {
+    u64 map;
+    int square;
+
+    for (int piece = 0; piece < 6; piece++) {
+        if ((map = board.positions[board.side2play][piece]) == 0) 
+            continue;
+        while (map) {
+            square = BitManipulation::getLSSB(map);
+            BitManipulation::popBit(&map, square);
+            MoveGen::genMoves(board, calBoard, piece, square);
+        }
+    }
 }

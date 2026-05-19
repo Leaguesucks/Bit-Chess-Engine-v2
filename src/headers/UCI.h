@@ -50,6 +50,7 @@ class UCI {
         /**
          * @brief Process the position request
          * @param msg The message sent from the GUI, which should be a position command
+         * @return A response to the GUI
          */
-        void processPosition(std::string msg);
+        std::string processPosition(std::string msg);
 };

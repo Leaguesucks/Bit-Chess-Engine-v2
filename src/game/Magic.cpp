@@ -37,17 +37,16 @@ namespace Magic {
             if (bishop) {
                 relevant_attacks = Sliders::relevantBishopAttacks[square];
                 relevant_attack_num = Sliders::NUM_BISHOP_RELEVANT_SQUARES[square];
-            }
-            else {
+            } else {
                 relevant_attacks = Sliders::relevantRookAttacks[square];
                 relevant_attack_num = Sliders::NUM_ROOK_RELEVANT_SQUARES[square];
             }
 
-            // For n relevant attacks, there 2^n different possible relevant attacks configurations
+            // For n relevant attacks, there are 2^n different possible relevant attacks configurations
             u32 possible_relevant_attacks_config_num = 1 << relevant_attack_num;
 
             for (u32 i = 0; i < possible_relevant_attacks_config_num; i++) {
-                rev_squares[i] = Sliders::findRelevantSquares(i, relevant_attacks);
+                rev_squares[i] = Sliders::findRelevantMasks(i, relevant_attacks);
 
                 // Initiate all possible attack configurations given this square
                 if (bishop)
@@ -94,38 +93,38 @@ namespace Magic {
         BitManipulation::initialize();
         Sliders::initialize();
         
-        printf("Magic number for bishops:\n\n");
+        std::cout << "Magic number for bishops\n\n";
 
         for (int attempt = 0; attempt < 100; attempt++) { // Try for 100 times
             int i;
-            for (i = A8; i <= H1; i++) {
+            for (i = 0; i < 64; i++) {
                 u64 magic_number = findMagic(i, true);
                 if (magic_number == 0ULL) {
-                    printf("\nAttempt %d failed, retrying...\n", attempt);
+                    std::cout << "\nAttempt " << attempt << " failed, retrying...\n";
                     break;
                 }
-                printf("0x%llxULL,\n", magic_number);
+                std::cout << "0x" << std::hex << magic_number << "ULL,\n";
             }
             if (i >= 64) {
-                printf("\nMagic bishop success!\n\n");
+                std::cout << "\nMagic bishop success!\n\n";
                 break;
             }
         }
 
-        printf("Magic number for rooks:\n\n");
+        std::cout << "Magic number for rooks:\n\n";
 
         for (int attempt = 0; attempt < 100; attempt++) { // Try for 100 times
             int i;
-            for (i = A8; i <= H1; i++) {
+            for (i = 0; i < 64; i++) {
                 u64 magic_number = findMagic(i, false);
                 if (magic_number == 0ULL) {
-                    printf("\nAttempt %d failed, retrying...\n", attempt);
+                    std::cout << "\nAttempt " << attempt << " failed, retrying...\n";
                     break;
                 }
-                printf("0x%llxULL,\n", magic_number);
+                std::cout << "0x" << std::hex << magic_number << "ULL,\n";
             }
-            if (i >= H1) {
-                printf("\nMagic rook success!\n\n");
+            if (i >= 64) {
+                std::cout << "\nMagic rook success!\n\n";
                 break;
             }
         }

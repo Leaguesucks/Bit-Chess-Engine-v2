@@ -30,6 +30,8 @@ class ChessGame:
         self.output = tk.Text()
         self.entry = tk.Entry()
 
+        self.current_fen = str()
+
     def drawChessBoard(self) -> None:
         LIGHT = "#F0D9B5"
         DARK = "#B58863"
@@ -49,7 +51,7 @@ class ChessGame:
 
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
 
-    def loadPiecesImg(self) -> None:
+    def loadImg(self) -> None:
         '''Load the pieces image'''
         pieces = [
             "whitepawn",
@@ -66,11 +68,11 @@ class ChessGame:
             "blackking"
         ]
 
-        path = "resources/images/pieces/"
+        pathPieces = "resources/images/pieces/"
 
         count = 0
         for piece in pieces:
-            img = Image.open(path + piece + ".png")
+            img = Image.open(pathPieces + piece + ".png")
             img = img.resize((100, 100))
             self.pieceImg[CPIECES[count]] = ImageTk.PhotoImage(img)
             count += 1
@@ -105,7 +107,11 @@ class ChessGame:
 
     def setFEN(self, fen: str) -> None:
         '''Set up the chess board from a FEN first field'''
+        if len(fen) == 0:
+            return
+
         self.canvas.delete("pieces")
+        self.current_fen = fen
 
         field = fen.split()
         placement = field[0]
@@ -145,6 +151,34 @@ class ChessGame:
         square = row*8 + col
         self.command = f"showMove {square}"
         signal.raise_signal(signal.SIGUSR2)
+
+    def maskSquares(self, color: str, encode: str) -> None:
+        '''Decode the mask string and mask it on the GUI'''
+        self.canvas.delete(f"{color}_masks")
+        if len(color) == 0 or len(encode) == 0:
+            return
+        
+        index, square = 0, 0
+        
+        while square < 64 and index < len(encode):
+            if encode[index].isdigit():
+                square += int(encode[index])
+            else:
+                row = math.floor(square / 8) * 100 + 50
+                col = (square % 8) * 100 + 50
+                radius = 15
+ 
+                self.canvas.create_oval(
+                    col - radius,
+                    row - radius,
+                    col + radius,
+                    row + radius,
+                    fill=color,
+                    outline="",
+                    tags=(f"{color}_masks", "masks")
+                )
+                square += 1
+            index += 1
 
     def openPauseMenu(self) -> None:
         '''Open a pause menu'''
@@ -221,10 +255,18 @@ class ChessGame:
         self.output.insert(tk.END, f">{cmd}\n")
         self.entry.delete(0, tk.END)
 
+    def render(self, fen: str, moves: str, captures: str) -> None:
+        '''Render a new frame'''
+        self.setFEN(fen)
+        self.maskSquares("grey", moves)
+        self.maskSquares("orange", captures)
+
+        self.canvas.tag_raise("pieces")
+
     def execute(self, fen: str = BEGIN) -> None:
+        self.loadImg()
         self.drawChessBoard()
         self.drawLabels()
-        self.loadPiecesImg()
-        self.setFEN(fen)
+        self.render(fen, "", "")
 
         self.root.mainloop()

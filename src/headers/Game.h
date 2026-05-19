@@ -8,39 +8,9 @@
 
 #include "General.h"
 #include "BitManipulation.h"
+#include "MoveGen.h"
 
 #define BEGIN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-
-/**
- * @brief Holds the general information of the game, such as the pieces' positions
- */
-struct BitBoard {
-    u64 positions[2][6]; // Positions of each piece on each side
-    u64 allPositions[2]; // Positions of all piece in a single bit map on each side
-    u8 board[64]; // The board with each piece value on it. Used for fast communication with the GUI
-    u32 fly; // The total number of full move that has been played
-    u8 side2play; // The side to play
-
-    /** The castling right for both side
-     * 0001 = white king side
-     * 0010 = white queen side
-     * 0100 = black king side
-     * 1000 = black queen side
-     */
-    u8 castlingRights;
-    u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
-    char enPassen; // The enPassen square, which is the square behind the victim
-};
-
-/**
- * @brief Holds the information for the engine calculation, such as moves, attacks, etc
- */
-struct CalBoard {
-    u64 moves[64]; // All possible move for each square. Reset at the begining of each ply
-    u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
-    u64 checkSources; // Stores the sources of check for each side
-    u64 pinned; // Masks of pinned pieces
-};
 
 /** 
  * @brief Holds the current state of the game, such as the total number of moves, who
@@ -104,18 +74,6 @@ class Game {
          */
         void undo();
 
-        /**
-         * @param square The square to calculate the moves
-         * @return The moves from a square. Used to communicate with the GUI
-         */
-        u64 getMovesOnSquare(int square);
-
-        /**
-         * @param square The square to calculate the captures
-         * @return The captures from a square. Used to communicate with the GUI
-         */
-        u64 getCapturesOnSquare(int square);
-
     private:
         /**
          * @brief Default constructor
@@ -142,4 +100,9 @@ class Game {
          * @param token The field of the FEN that describes the enpassen squares
          */
         void setEnPassen(std::string token);
+
+        /**
+         * @brief Calculate moves for the side to play
+         */
+        void calculateMoves();
 };

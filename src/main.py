@@ -16,13 +16,16 @@ def handleGUIsend(signum, frame) -> None:
     uci.send(game.command)
     response = uci.recv()
     print(f">{response}") # debug
+    processResponse(response)
 
 def processResponse(response: str) -> None:
     '''Process the response received from the engine'''
     tokens = response.split("__")
 
     if tokens[0] == "position":
-        game.setFEN(tokens[1])
+        game.render(tokens[1], "", "")
+    elif tokens[0] == "showMove":
+        game.render("", tokens[2], tokens[4])
 
 if __name__ == "__main__":
     global uci, game

@@ -61,4 +61,26 @@ namespace BitManipulation {
 
         return index;
     }
+
+    std::string encodeMaskBits(u64 b) {
+        std::string encode;
+        int empty = 0;
+
+        for (int square = 63; square >= 0; square--) {
+            if (!getBit(b, square)) {
+                empty++;
+                
+                if (square == 0) {
+                    encode.append(std::to_string(empty));
+                    return encode;
+                }
+            } else {
+                if (empty > 0) encode.append(std::to_string(empty));
+                empty = 0;
+                encode.append("x");
+            }
+        }
+
+        return encode;
+    }
 }

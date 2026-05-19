@@ -4,7 +4,6 @@
 
 #include "General.h"
 #include "LookupTable.h"
-#include "Game.h"
 #include "BitManipulation.h"
 
 /**

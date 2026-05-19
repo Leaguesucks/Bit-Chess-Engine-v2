@@ -8,7 +8,6 @@ class UCI:
         self.game = subprocess.Popen(["bin/main.exe"],
                                     stdin=subprocess.PIPE,
                                     stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
                                     text=True,
                                     bufsize=1)
 
