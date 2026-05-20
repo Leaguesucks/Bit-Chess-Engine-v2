@@ -4,7 +4,7 @@
 #include <cstring>
 #include <cstdlib>
 
-#include "General.h"
+#include "Global.h"
 #include "BitManipulation.h"
 #include "Sliders.h"
 

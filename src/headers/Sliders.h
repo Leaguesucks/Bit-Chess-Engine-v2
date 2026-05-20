@@ -1,6 +1,6 @@
 #pragma once
 
-#include "General.h"
+#include "Global.h"
 #include "BitManipulation.h"
 
 /**

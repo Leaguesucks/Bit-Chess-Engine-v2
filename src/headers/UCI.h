@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-#include "General.h"
+#include "Global.h"
 #include "Game.h"
 
 #define BUFFSIZE 100

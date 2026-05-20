@@ -21,7 +21,7 @@ void Game::setFEN(std::string fen) {
             setPosition(token);
             break;
         case 1:
-            board.side2play = (token[0] == 'w') ? W : B;
+            board.side2play = (token[0] == 'w') ? White : Black;
             break;
         case 2:
             setCastleRight(token);
@@ -54,17 +54,19 @@ std::string Game::toFEN() {
         for (col = 7; col >= 0; col--) {
             if (board.board[row*8 + col] == EMPTY) {
                 empty++;
-                if (col == 0) fen.append(std::to_string(empty));
             } else {
                 if (empty > 0) fen.append(std::to_string(empty));
                 fen.append(1, board.board[row*8 + col]);
                 empty = 0;                    
             }
+
+            if (col == 0) 
+                fen.append(std::to_string(empty));
         }
         (row > 0) ? fen.append("/") : fen.append(" ");
     }
 
-    (board.side2play == W) ? fen.append("w ") : fen.append("b ");
+    (board.side2play == White) ? fen.append("w ") : fen.append("b ");
 
     for (int c = 0; c < 4; c++) { // Castle right
         if (board.castlingRights == 0) {
@@ -117,14 +119,14 @@ void Game::setPosition(std::string token) {
             if (isdigit(piece)) {
                 col -= (piece - '0');
             } else {
-                color = (islower(piece)) ? B : W;
+                color = (islower(piece)) ? Black : White;
                 piece = tolower(piece);
 
                 for (int i = 0; i < 6; i++) {
                     if (piece == P[i]) {
                         BitManipulation::setBit(&board.positions[color][i], row*8 + col);
                         board.allPositions[color] |= board.positions[color][i];
-                        board.board[row*8 + col] = (color == B) ? piece : toupper(piece);
+                        board.board[row*8 + col] = (color == Black) ? piece : toupper(piece);
                         break;
                     }
                 }
@@ -163,12 +165,17 @@ void Game::setEnPassen(std::string token) {
     board.enPassen = row*8 + col;
 }
 
-void Game::calculateMoves() {
+void Game::calculateMoves(int side) {
     u64 map;
     int square;
 
+    MoveGen::setPin(board, calBoard);
+    calBoard.allPossibleAttacks[side] = 0ULL;
+    calBoard.procPositions[side] = 0ULL;
+    calBoard.checkSources[side] = 0ULL;
+    calBoard.allLegalMoves[side] = 0ULL;
     for (int piece = 0; piece < 6; piece++) {
-        if ((map = board.positions[board.side2play][piece]) == 0) 
+        if ((map = board.positions[side][piece]) == 0) 
             continue;
         while (map) {
             square = BitManipulation::getLSSB(map);

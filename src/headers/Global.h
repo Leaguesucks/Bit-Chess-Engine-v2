@@ -10,8 +10,11 @@
 #define u32 uint32_t
 #define u64 uint64_t
 
-#define W 0
-#define B 1
+#define White 0
+#define Black 1
+
+#define KING_SIDE 0
+#define QUEEN_SIDE 1
 
 #define NORTH 0
 #define NE 1
@@ -57,7 +60,7 @@ const std::string squareStr[64] = {
 struct BitBoard {
     u64 positions[2][6]; // Positions of each piece on each side
     u64 allPositions[2]; // Positions of all piece in a single bit map on each side
-    u8 board[64]; // The board with each piece value on it. Used for fast communication with the GUI
+    u8 board[64]; // The board with each piece's character value on it. Used for fast communication with the GUI
     u32 fly; // The total number of full move that has been played
     u8 side2play; // The side to play
 
@@ -69,15 +72,29 @@ struct BitBoard {
      */
     u8 castlingRights;
     u8 fifty; // Fifty move rule, decrement everytime a ply is played. Reset to 100 after every pawn move or capture
-    char enPassen; // The enPassen square, which is the square behind the victim
+    int enPassen; // The enPassen square, which is the square behind the victim
 };
 
 /**
  * @brief Holds the information for the engine calculation, such as moves, attacks, etc
  */
 struct CalBoard {
-    u64 moves[64]; // All possible move for each square. Reset at the begining of each ply
+    // All possible move for each square. Reset at the begining of each ply
+    // A move can include captures, except for pawn
+    u64 moves[64]; 
+
     u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
-    u64 checkSources; // Stores the sources of check for each side
+    u64 checkSources[2]; // Stores the sources of check for each side
     u64 pinned; // Masks of pinned pieces
+    u64 allPossibleAttacks[2]; // Mask of all POSSIBLE/POTENTIAL attacks (moves + pawn's captures) for each side
+    u64 allLegalMoves[2]; // All LEGAL moves for each side
+    int pinSources[64]; // Store the square of the pin source for each square
+
+    // Protected positions. The king cannot capture a protected position/piece
+    // Clear at the beginning of each moves generation / the end of each ply
+    u64 procPositions[2];
+
+    // Raise if it is possible for the king to castle. The bit encoding is identical to
+    // the castlingRight flag in BitBoard
+    u8 castlingFlags;
 };

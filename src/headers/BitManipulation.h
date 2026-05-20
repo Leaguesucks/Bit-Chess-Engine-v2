@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "General.h"
+#include "Global.h"
 
 /**
  * @brief Provide methods to manipulate bits in an u64

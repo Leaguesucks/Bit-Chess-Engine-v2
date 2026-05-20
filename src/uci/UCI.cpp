@@ -39,7 +39,7 @@ void UCI::processMsg(std::string msg) {
         square = std::stoi(token);
         response.append("showMove__moves__");
         response.append(BitManipulation::encodeMaskBits(game->getCalBoard()->moves[square]));
-        printBoard(game->getCalBoard()->moves[square], std::cerr);
+        printBoard(game->getCalBoard()->moves[square], std::cerr); // DEBUG
         response.append("__captures__");
         response.append(BitManipulation::encodeMaskBits(game->getCalBoard()->captures[square]));
     }

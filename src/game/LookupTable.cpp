@@ -140,7 +140,7 @@ void LookupTable::initPawnAttacks() {
             if ((newFile = file + 1) <= 8)
                 BitManipulation::setBit(&attacks, (newRank - 1) * 8 + (newFile - 1));
         }
-        pawnAttacks[B][square] = attacks;
+        pawnAttacks[Black][square] = attacks;
 
         attacks = 0ULL;
         /* White pawn's attacks */
@@ -150,7 +150,7 @@ void LookupTable::initPawnAttacks() {
             if ((newFile = file + 1) <= 8)
                 BitManipulation::setBit(&attacks, (newRank - 1) * 8 + (newFile - 1));
         }
-        pawnAttacks[W][square] = attacks;
+        pawnAttacks[White][square] = attacks;
     }
 }
 
@@ -168,12 +168,12 @@ void LookupTable::initPawnMoves() {
 
         BitManipulation::setBit(&moves, rank * 8 + (file - 1));
 
-        pawnMoves[W][square] = moves;
+        pawnMoves[White][square] = moves;
         moves = 0ULL;
 
         BitManipulation::setBit(&moves, (rank - 2) * 8 + (file - 1));
         
-        pawnMoves[B][square] = moves;
+        pawnMoves[Black][square] = moves;
     }
 }
 

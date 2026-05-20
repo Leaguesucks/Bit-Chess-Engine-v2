@@ -6,7 +6,7 @@
 #include <vector>
 #include <iostream>
 
-#include "General.h"
+#include "Global.h"
 #include "BitManipulation.h"
 #include "MoveGen.h"
 
@@ -98,8 +98,9 @@ class Game {
 
         /**
          * @brief Calculate moves for the side to play
+         * @param side The side to calculate the moves for
          */
-        void calculateMoves();
+        void calculateMoves(int side);
 
         /**
          * @brief Clean up i.e., set all members to zero
