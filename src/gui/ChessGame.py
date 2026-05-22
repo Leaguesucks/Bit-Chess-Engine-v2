@@ -32,6 +32,9 @@ class ChessGame:
 
         self.current_fen = str()
 
+        self.pauseMenu = None
+        self.commandWindow = None
+
     def drawChessBoard(self) -> None:
         LIGHT = "#F0D9B5"
         DARK = "#B58863"
@@ -186,23 +189,26 @@ class ChessGame:
 
     def openPauseMenu(self) -> None:
         '''Open a pause menu'''
-        popUp = tk.Toplevel(self.root)
+        if self.pauseMenu is not None and self.pauseMenu.winfo_exists():
+            return
 
-        popUp.title("Pause Menu")
-        popUp.geometry("300x400")
-        popUp.resizable(False, False)
+        self.pauseMenu = tk.Toplevel(self.root)
+
+        self.pauseMenu.title("Pause Menu")
+        self.pauseMenu.geometry("300x400")
+        self.pauseMenu.resizable(False, False)
 
         resumeBtn = tk.Button(
-            popUp,
+            self.pauseMenu,
             text="Resume",
             width=20,
             height=2,
-            command=popUp.destroy
+            command=self.pauseMenu.destroy
         )
         resumeBtn.pack(pady=5)
 
         commandBtn = tk.Button(
-            popUp,
+            self.pauseMenu,
             text="Command",
             width=20,
             height=2,
@@ -210,16 +216,28 @@ class ChessGame:
         )
         commandBtn.pack(pady=5)
 
+    def closePauseMenu(self) -> None:
+        '''Close the pause menu'''
+        if self.pauseMenu is not None:
+            self.pauseMenu.destroy()
+            self.pauseMenu = None
+
     def openCommandConsole(self) -> None:
         '''Open the command console'''
-        cs = tk.Toplevel(self.root)
 
-        cs.title("Command console")
-        cs.geometry("500x400")
-        cs.resizable(False, False)
+        if self.commandWindow is not None and self.commandWindow.winfo_exists():
+            return
+        if self.pauseMenu is not None: # Hide the pause menu
+            self.pauseMenu.withdraw()
+
+        self.pauseMenu = tk.Toplevel(self.root)
+
+        self.pauseMenu.title("Command console")
+        self.pauseMenu.geometry("500x400")
+        self.pauseMenu.resizable(False, False)
 
         outputBox = tk.Text(
-            cs,
+            self.pauseMenu,
             height=15,
             width=60
         )
@@ -227,7 +245,7 @@ class ChessGame:
         self.output = outputBox
 
         entry = tk.Entry(
-            cs,
+            self.pauseMenu,
             width=50,
             font=("Arial", 12)
         )
@@ -235,7 +253,7 @@ class ChessGame:
         self.entry = entry
 
         sendBtn = tk.Button(
-            cs,
+            self.pauseMenu,
             text="Send",
             command=lambda: self.getConsoleCommand()
         )
@@ -245,6 +263,16 @@ class ChessGame:
             "<Return>",
             lambda event: self.getConsoleCommand()
         )
+
+    def closeCommandConsole(self) -> None:
+        '''Close command console'''
+
+        if self.commandWindow is not None:
+            self.commandWindow.destroy()
+            self.commandWindow = None
+
+        if self.pauseMenu is not None and self.pauseMenu.winfo_exists():
+            self.pauseMenu.deiconify() # Re-show the menu window
 
     def getConsoleCommand(self) -> None:
         '''Get the command input'''

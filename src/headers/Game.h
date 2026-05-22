@@ -7,37 +7,21 @@
 #include <iostream>
 
 #include "Global.h"
+#include "GameData.h"
 #include "BitManipulation.h"
 #include "MoveGen.h"
+#include "LookupTable.h"
 
 #define BEGIN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 /** 
  * @brief Holds the current state of the game, such as the total number of moves, who
  *        to play, etc.
- * @note The moves is encoded in a u64 number as followed:
- * ```
- *  bits 0: Which side to play
- *  bits 1-3: Which piece to move
- *  bits 4-9: From which square
- *  bits 10-15: To which square
- *  bits 16-18: What type of move:
- *      - 000: Normal move
- *      - 001: Capture
- *      - 010: Enpassen
- *      - 011: Promotion
- *      - 100: Castling (100 -> king side, 101 -> queen side)
- *      - 110: Pawn move
- *      - 111: Double pawn move
- * bits 19-21: What captured/promoted piece (0 if none)
- * bits 22-25: Castling flags BEFORE this move
- * bits 26-31: Redundant
- * ```
  */
 class Game {
     private:
-        BitBoard board; // Holds the current information of the game
-        CalBoard calBoard; // Holds the information for the engine calculation
+        GameData::BitBoard board; // Holds the current information of the game
+        GameData::CalBoard calBoard; // Holds the information for the engine calculation
         std::vector<u32> moveStacks; // Store the history of moves
 
     public:
@@ -59,15 +43,15 @@ class Game {
 
         /* Setters and getters. For performance we return the references */
 
-        CalBoard* getCalBoard();
-        BitBoard* getBoard();
+        GameData::CalBoard* getCalBoard();
+        GameData::BitBoard* getBoard();
 
         /**
          * @brief Move a piece
-         * 
-         * @param move The encoded move
+         * @param moveInfo Contains the source and destination square and promotion (if applied)
+         * @return The move status: ERROR, PENDING (due to promotion) or FINISHED
          */
-        void makeMove(u64 move);
+        int makeMove(GameData::MoveInfo moveInfo);
 
         /**
          * @brief Undo a move
@@ -90,11 +74,27 @@ class Game {
         void setCastleRight(std::string token);
 
         /**
-         * @brief Masks the enpassen squares from a FEN field
+         * @brief Set the enpassen squares from a FEN field
          * 
          * @param token The field of the FEN that describes the enpassen squares
          */
         void setEnPassen(std::string token);
+
+        /**
+         * @brief Set the enpassen square after a double pawn move
+         * @param side The color of the moved pawn
+         * @param des The destination of the pawn
+         */
+        void setEnPassen(int side, int des);
+
+        /**
+         * @brief Masks the enpassen square after a pawn double move
+         * 
+         * @param des The destination after the enpassen move
+         * @param side The color of the pawn being enpassen
+         * @return The square of the victim pawn
+         */
+        int getEnPassenVictim(int des, int side);
 
         /**
          * @brief Calculate moves for the side to play
@@ -106,4 +106,40 @@ class Game {
          * @brief Clean up i.e., set all members to zero
          */
         void reset();
+
+        /**
+         * @brief Make the pawn move
+         * @param pMove Reference to the move struct to retrieve and update the move information
+         */
+        void movePawn(GameData::MoveInfo& pMove);
+
+        /**
+         * @brief Make the king move
+        *  @param pMove Reference to the move struct to retrieve and update the move information
+         */
+        void moveKing(GameData::MoveInfo& pMove);
+
+        /**
+         * @brief Make the rook move
+         * @param pMove Reference to the move struct to retrieve and update the move information
+         */
+        void moveRook(GameData::MoveInfo& pMove);
+
+        /**
+         * @param pMove The move struct to retrieve and update the move information
+         * @return The encoded move
+         */
+        u64 encodeMove(const GameData::MoveInfo pMove);
+
+        /**
+         * @brief Handle updating after successful move
+         * @param moveInfo Contains details about the move
+         */
+        void postSuccessfulMove(const GameData::MoveInfo moveInfo);
+
+        /**
+         * @brief Check what type of move it is. If it is a capture move then return the captured piece as well
+         * @param pMove Reference to the move information to retrieve and update
+         */
+        void checkValidMove(GameData::MoveInfo& pMove);
 };

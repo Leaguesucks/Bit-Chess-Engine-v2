@@ -142,17 +142,17 @@ namespace LookupTable {
         0x26002114058042ULL
     };
 
-    const int rookCastleStartSq[2][2] = {
+    const int ROOK_CASTLE_START_SQUARE[2][2] = {
         {A1, H1}, {A8, H8}
     };
 
-    const int rookCastleEndSq[2][2] = {
+    const int ROOK_CASTLE_END_SQUARE[2][2] = {
         {C1, E1}, {C8, E8}
     };
 
-    const int kingCastleStartSq[2] = {D1, D8};
+    const int KING_CASTLE_START_SQUARE[2] = {D1, D8};
 
-    const int kingCastleEndSq[2][2] = {
+    const int KING_CASTLE_END_SQUARE[2][2] = {
         {B1, F1}, {B8, F8}
     };
 

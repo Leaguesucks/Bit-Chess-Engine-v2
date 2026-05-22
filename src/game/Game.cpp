@@ -41,7 +41,8 @@ void Game::setFEN(std::string fen) {
         }
         field++;
     }
-    calculateMoves();
+    calculateMoves(board.side2play ^ 1); // Calculate moves for the previous side first
+    calculateMoves(board.side2play);
 }
 
 std::string Game::toFEN() {
@@ -78,7 +79,7 @@ std::string Game::toFEN() {
     }
     fen.append(" ");
 
-    (board.enPassen < 0) ? fen.append("-") : fen.append(squareStr[board.enPassen]);
+    (board.enPassen < 0) ? fen.append("-") : fen.append(SQUARE_STR[board.enPassen]);
     fen.append(" ");
 
     fen.append(std::to_string(100 - board.fifty));
@@ -89,16 +90,54 @@ std::string Game::toFEN() {
     return fen;
 }
 
-CalBoard* Game::getCalBoard() {
+GameData::CalBoard* Game::getCalBoard() {
     return &calBoard;
 }
 
-BitBoard* Game::getBoard() {
+GameData::BitBoard* Game::getBoard() {
     return &board;
 }
 
-void Game::makeMove(u64 move) {
+int Game::makeMove(GameData::MoveInfo moveInfo) {
+    u8 piece, pieceNum;
 
+    if (moveInfo.status == PENDING_PROMOTE_COMPLETE) {
+        postSuccessfulMove(moveInfo);
+        return SUCCESSFUL_MOVE;
+    }
+
+    piece = board.board[moveInfo.from];
+    if (piece == EMPTY || moveInfo.side != board.side2play)
+        return INVALID_MOVE;
+
+    for (pieceNum = 0; pieceNum < 6; pieceNum++)
+        if (piece == PIECE_CHAR[pieceNum]) 
+            break;
+
+    checkValidMove(moveInfo);
+    if (moveInfo.status == INVALID_MOVE)
+        return INVALID_MOVE;
+
+    switch (pieceNum)
+    {
+        case PAWN:
+            movePawn(moveInfo);
+            break;
+        case KING:
+            moveKing(moveInfo);
+            break;
+        case ROOK:
+            moveRook(moveInfo);
+            break;
+        default:      
+            break;
+    }
+
+    if (moveInfo.status == PENDING_PROMOTE_REQUEST)
+        return PENDING_PROMOTE_REQUEST;
+
+    postSuccessfulMove(moveInfo);
+    return SUCCESSFUL_MOVE;
 }
 
 void Game::undo() {
@@ -110,7 +149,6 @@ void Game::setPosition(std::string token) {
     int row, col, color;
     std::string rank;
     std::stringstream ss(token);
-    const char P[6] = {'p', 'r', 'n', 'b', 'q', 'k'};
 
     row = col = 7;
     while (std::getline(ss, rank, '/')) {
@@ -123,7 +161,7 @@ void Game::setPosition(std::string token) {
                 piece = tolower(piece);
 
                 for (int i = 0; i < 6; i++) {
-                    if (piece == P[i]) {
+                    if (piece == PIECE_CHAR[i]) {
                         BitManipulation::setBit(&board.positions[color][i], row*8 + col);
                         board.allPositions[color] |= board.positions[color][i];
                         board.board[row*8 + col] = (color == Black) ? piece : toupper(piece);
@@ -155,6 +193,7 @@ void Game::setCastleRight(std::string token) {
 }
 
 void Game::setEnPassen(std::string token) {
+    board.enPassen = -1;
     if (token.compare("-") == 0)
         return;
 
@@ -165,11 +204,23 @@ void Game::setEnPassen(std::string token) {
     board.enPassen = row*8 + col;
 }
 
+void Game::setEnPassen(int side, int des) {
+    int squareAdd = (side == White) ? -8 : 8;
+    board.enPassen = des + squareAdd;
+}
+
+int Game::getEnPassenVictim(int des, int side) {
+    int squareAdd;
+
+    squareAdd = (side == White) ? 8 : -8;
+    return des + squareAdd;
+}
+
 void Game::calculateMoves(int side) {
     u64 map;
     int square;
 
-    MoveGen::setPin(board, calBoard);
+    MoveGen::setPin(board, calBoard, side);
     calBoard.allPossibleAttacks[side] = 0ULL;
     calBoard.procPositions[side] = 0ULL;
     calBoard.checkSources[side] = 0ULL;
@@ -180,7 +231,7 @@ void Game::calculateMoves(int side) {
         while (map) {
             square = BitManipulation::getLSSB(map);
             BitManipulation::popBit(&map, square);
-            MoveGen::genMoves(board, calBoard, piece, square);
+            MoveGen::genMoves(board, calBoard, piece, square, side);
         }
     }
 }
@@ -190,4 +241,137 @@ void Game::reset() {
     memset(&calBoard, 0, sizeof(calBoard));
     if (!moveStacks.empty())
         moveStacks.clear();
+}
+
+void Game::movePawn(GameData::MoveInfo& pMove) {
+    int lastRank, fromRank, toRank;
+
+    lastRank = (pMove.side == White) ? 7 : 0;
+    fromRank = pMove.from / 8;
+    toRank = pMove.to / 8;
+
+    if (toRank == lastRank) { // Pawn promotion
+        pMove.status = PENDING_PROMOTE_REQUEST;
+        return;
+    }
+
+    if (abs(toRank - fromRank) == 2) {
+        pMove.type = PAWN_DOUBLE_MOVE;
+        return;
+    }
+
+    if (toRank == board.enPassen) {
+        pMove.type = ENPASSEN;
+        return;
+    }
+
+    pMove.type = PAWN_MOVE;
+}
+
+void Game::moveKing(GameData::MoveInfo& pMove) {
+    int side = pMove.side;
+
+    if (pMove.to == LookupTable::KING_CASTLE_END_SQUARE[side][KING_SIDE]) {
+        pMove.type = CASTLE;
+        pMove.castleSide = KING_SIDE;
+    } else if (pMove.to == LookupTable::KING_CASTLE_END_SQUARE[side][QUEEN_SIDE]) {
+        pMove.type = CASTLE;
+        pMove.castleSide = QUEEN_SIDE;
+    } else {
+        // Normal move -> Clear the castling flag
+        board.castlingRights &= ~(1 << (2*side + KING_SIDE));
+        board.castlingRights &= ~(1 << (2*side + QUEEN_SIDE));
+    }
+}
+
+void Game::moveRook(GameData::MoveInfo& pMove) {
+    if (BitManipulation::getBit(board.castlingRights, pMove.side * 2 + KING_SIDE) &&
+        pMove.from == LookupTable::ROOK_CASTLE_START_SQUARE[pMove.side][KING_SIDE])
+        board.castlingRights &= ~(1 << (pMove.side * 2 + KING_SIDE));
+    
+    if (BitManipulation::getBit(board.castlingRights, pMove.side * 2 + QUEEN_SIDE) &&
+        pMove.from == LookupTable::ROOK_CASTLE_START_SQUARE[pMove.side][QUEEN_SIDE])
+        board.castlingRights &= ~(1 << (pMove.side * 2 + QUEEN_SIDE));
+}
+
+u64 Game::encodeMove(const GameData::MoveInfo moveInfo) {
+
+    return 0ULL;
+}
+
+void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
+    int enemySide = moveInfo.side ^ 1;
+    int side = moveInfo.side;
+
+    switch (moveInfo.type)
+    {
+        case CAPTURE:
+            BitManipulation::popBit(&board.positions[enemySide][moveInfo.capture], moveInfo.to);
+            board.fifty = FIFTY_INITIAL;
+            break;
+        case ENPASSEN:
+            BitManipulation::popBit(&board.positions[enemySide][PAWN], getEnPassenVictim(moveInfo.to, enemySide));
+            board.enPassen = -1;
+            board.fifty = FIFTY_INITIAL;
+            break;
+        case PROMOTION:
+            BitManipulation::popBit(&board.positions[side][PAWN], moveInfo.from);
+            BitManipulation::setBit(&board.positions[side][moveInfo.promote], moveInfo.to);
+            board.fifty = FIFTY_INITIAL;
+            break;
+        case CASTLE:
+            BitManipulation::popBit(&board.positions[side][ROOK], LookupTable::ROOK_CASTLE_START_SQUARE[side][moveInfo.castleSide]);
+            BitManipulation::setBit(&board.positions[side][ROOK], LookupTable::ROOK_CASTLE_END_SQUARE[side][moveInfo.castleSide]);
+            board.castlingRights &= ~(1 << (side*2 + moveInfo.castleSide));
+            break;
+        case PAWN_MOVE:
+            board.fifty = FIFTY_INITIAL;
+            break;
+        case PAWN_DOUBLE_MOVE:
+            board.fifty = FIFTY_INITIAL;
+            setEnPassen(side, moveInfo.to);
+            break;
+        default:
+            break;
+    }
+
+    if (moveInfo.type != PROMOTION) {
+        BitManipulation::popBit(&board.positions[side][moveInfo.piece], moveInfo.from);
+        BitManipulation::setBit(&board.positions[side][moveInfo.piece], moveInfo.to);
+    }
+
+    for (int i = 0; i < 6; i++) {
+        memset(board.allPositions, 0 , sizeof(board.allPositions));
+
+        board.allPositions[White] |= board.positions[White][i];
+        board.allPositions[Black] |= board.positions[Black][i];
+    }
+
+    calculateMoves(moveInfo.side);
+    board.side2play ^= 1;
+    board.fly++;
+    calculateMoves(board.side2play);
+    encodeMove(moveInfo);
+}
+
+void Game::checkValidMove(GameData::MoveInfo& pMove) {
+    int enemySide = pMove.side ^ 1;
+    int capturePiece;
+    u64 toMask;
+
+    toMask = 0ULL;
+    BitManipulation::setBit(&toMask, pMove.to);
+    if (calBoard.captures[pMove.from] & toMask) {
+        pMove.type = CAPTURE;
+
+        for (capturePiece = 0; capturePiece < 6; capturePiece++)
+            if (board.positions[enemySide][capturePiece] & toMask) {
+                pMove.capture = capturePiece;
+                return;
+            }
+    }
+    else if (calBoard.moves[pMove.from] & toMask)
+        pMove.type = NORMAL;
+    else
+        pMove.type = INVALID_MOVE;
 }

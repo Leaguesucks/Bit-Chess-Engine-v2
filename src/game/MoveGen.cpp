@@ -12,7 +12,7 @@ void MoveGen::initialize() {
     init = true;
 }
 
-void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
+void MoveGen::genMoves(GameData::BitBoard& bb, GameData::CalBoard& cb, int piece, int square, int side) {
     u64 rawMasks, allies, enemies, bitSq, pinSrcMask, enPassenMask;
     int pinSrcSq;
     maskReturn moveMasks;
@@ -20,32 +20,32 @@ void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
     cb.moves[square] = 0ULL;
     cb.captures[square] = 0ULL;
     
-    allies = bb.allPositions[bb.side2play];
-    enemies = bb.allPositions[bb.side2play ^ 1];
+    allies = bb.allPositions[side];
+    enemies = bb.allPositions[side ^ 1];
 
     switch (piece)
     {
     case PAWN:
-        rawMasks = genPawnMove(bb, cb, square);
+        rawMasks = genPawnMove(bb, cb, square, side);
         break;
     case ROOK:
-        moveMasks = genRookBishopMove(bb, false, square);
+        moveMasks = genRookBishopMove(bb, false, square, side);
         cb.moves[square] = moveMasks.moves; 
         cb.captures[square] = moveMasks.captures;
         rawMasks = moveMasks.rawMoves;
         break;
     case BISHOP:
-        moveMasks = genRookBishopMove(bb, true, square);
+        moveMasks = genRookBishopMove(bb, true, square, side);
         cb.moves[square] = moveMasks.moves; 
         cb.captures[square] = moveMasks.captures;
         rawMasks = moveMasks.rawMoves;
         break;
     case QUEEN:
-        moveMasks = genRookBishopMove(bb, false, square);
+        moveMasks = genRookBishopMove(bb, false, square, side);
         cb.moves[square] = moveMasks.moves;
         cb.captures[square] = moveMasks.captures;
         rawMasks = moveMasks.rawMoves;
-        moveMasks = genRookBishopMove(bb, true, square);
+        moveMasks = genRookBishopMove(bb, true, square, side);
         cb.moves[square] |= moveMasks.moves;
         cb.captures[square] |= moveMasks.captures;
         rawMasks |= moveMasks.rawMoves;
@@ -56,7 +56,7 @@ void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
         cb.moves[square] = rawMasks & ~allies;
         break;
     case KING:
-        genKingMove(bb, cb, square);
+        genKingMove(bb, cb, square, side);
         break;
     default:
         std::cerr << "This piece should not exist" << std::endl;
@@ -75,38 +75,38 @@ void MoveGen::genMoves(BitBoard& bb, CalBoard& cb, int piece, int square) {
         return; // No other moves allowed
     }
 
-    handleCheck(bb, cb, square, piece);
+    handleCheck(bb, cb, square, piece, side);
 
     // @note Don't forget to re-calculate checksource after each move
-    if (bb.positions[bb.side2play ^ 1][KING] & cb.captures[square]) // Add the check source
-        BitManipulation::setBit(&cb.checkSources[bb.side2play], square);
-    cb.allPossibleAttacks[bb.side2play] |= rawMasks & ~allies;
-    cb.procPositions[bb.side2play] |= (rawMasks & allies);
-    cb.allLegalMoves[bb.side2play] |= cb.moves[square];
+    if (bb.positions[side ^ 1][KING] & cb.captures[square]) // Add the check source
+        BitManipulation::setBit(&cb.checkSources[side], square);
+    cb.allPossibleAttacks[side] |= rawMasks & ~allies;
+    cb.procPositions[side] |= (rawMasks & allies);
+    cb.allLegalMoves[side] |= cb.moves[square];
 }
 
-u64 MoveGen::genPawnMove(BitBoard& bb, CalBoard& cb, int square) {
+u64 MoveGen::genPawnMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int square, int side) {
     u64 rawMasks, moves, allies, enemies, enPassenMask;
     int rank, file, pRank;
 
-    allies = bb.allPositions[bb.side2play];
-    enemies = bb.allPositions[bb.side2play ^ 1];
+    allies = bb.allPositions[side];
+    enemies = bb.allPositions[side ^ 1];
 
     rank = square / 8;
     file = square % 8;
-    pRank = (bb.side2play == White) ? 1 : 6;
+    pRank = (side == White) ? 1 : 6;
 
     enPassenMask = 0ULL;
     BitManipulation::setBit(&enPassenMask, bb.enPassen);
 
-    rawMasks = LookupTable::pawnAttacks[bb.side2play][square];
+    rawMasks = LookupTable::pawnAttacks[side][square];
     cb.captures[square] = rawMasks & enemies & (~allies) & enPassenMask;
-    moves = LookupTable::pawnMoves[bb.side2play][square] & (~(allies | enemies));
+    moves = LookupTable::pawnMoves[side][square] & (~(allies | enemies));
     if (rank == pRank && moves != 0ULL) // Mannualy check for double moves
-        if (bb.side2play == White)
-            BitManipulation::setBit(&moves, (rank + 1) * 8 + file);
+        if (side == White)
+            BitManipulation::setBit(&moves, (rank + 2) * 8 + file);
         else
-            BitManipulation::setBit(&moves, (rank - 1) * 8 + file);
+            BitManipulation::setBit(&moves, (rank - 2) * 8 + file);
             
     moves &= ~(allies | enemies);
     cb.moves[square] = moves;
@@ -114,12 +114,12 @@ u64 MoveGen::genPawnMove(BitBoard& bb, CalBoard& cb, int square) {
     return rawMasks;
 }
 
-MoveGen::maskReturn MoveGen::genRookBishopMove(BitBoard& bb, bool bishop, int square) {
+MoveGen::maskReturn MoveGen::genRookBishopMove(GameData::BitBoard& bb, bool bishop, int square, int side) {
     u64 allies, enemies, revBlockers, index;
     maskReturn sliderMasks;
 
-    allies = bb.allPositions[bb.side2play];
-    enemies = bb.allPositions[bb.side2play ^ 1];
+    allies = bb.allPositions[side];
+    enemies = bb.allPositions[side ^ 1];
 
     if (bishop) {
         revBlockers = Sliders::relevantBishopAttacks[square] & (allies | enemies);
@@ -136,25 +136,25 @@ MoveGen::maskReturn MoveGen::genRookBishopMove(BitBoard& bb, bool bishop, int sq
     return sliderMasks;
 }
 
-void MoveGen::setPin(BitBoard& bb, CalBoard& cb) {
+void MoveGen::setPin(GameData::BitBoard& bb, GameData::CalBoard& cb, int side) {
     // Only the rook and bishop (and the queen - a hybrid) can pin other pieces
     u64 allies, enemies, rookPinners, bishopPinners, enemyRooks, enemyQueens, enemyBishops;
     int kingSq;
     maskReturn sliderMasks;
     
-    allies = bb.allPositions[bb.side2play];
-    enemies = bb.allPositions[bb.side2play ^ 1];
-    enemyRooks = bb.positions[bb.side2play ^ 1][ROOK];
-    enemyBishops = bb.positions[bb.side2play ^ 1][BISHOP];
-    enemyQueens = bb.positions[bb.side2play ^ 1][QUEEN];
-    kingSq = BitManipulation::getLSSB(bb.positions[bb.side2play][KING]);
+    allies = bb.allPositions[side];
+    enemies = bb.allPositions[side ^ 1];
+    enemyRooks = bb.positions[side ^ 1][ROOK];
+    enemyBishops = bb.positions[side ^ 1][BISHOP];
+    enemyQueens = bb.positions[side ^ 1][QUEEN];
+    kingSq = BitManipulation::getLSSB(bb.positions[side][KING]);
 
     // Mask the rook attack rays from the king square
-    sliderMasks = genRookBishopMove(bb, false, kingSq);
+    sliderMasks = genRookBishopMove(bb, false, kingSq, side);
     rookPinners = sliderMasks.moves & (enemyRooks | enemyQueens);
 
     // Mask the bishop attack rays from the king square
-    sliderMasks = genRookBishopMove(bb, true, kingSq);
+    sliderMasks = genRookBishopMove(bb, true, kingSq, side);
     bishopPinners = sliderMasks.moves & (enemyBishops | enemyQueens);
 
     // Clean up and initialize
@@ -167,7 +167,7 @@ void MoveGen::setPin(BitBoard& bb, CalBoard& cb) {
     setRookBishopPin(cb, kingSq, allies, bishopPinners);
 }
 
-void MoveGen::setRookBishopPin(CalBoard& cb, int kingSq, u64 allies, u64 pinners) {
+void MoveGen::setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u64 pinners) {
     int square;
     u64 allyBlockers;
     
@@ -187,58 +187,43 @@ void MoveGen::setRookBishopPin(CalBoard& cb, int kingSq, u64 allies, u64 pinners
     }
 }
 
-u64 MoveGen::genKingMove(BitBoard& bb, CalBoard& cb, int square) {
+u64 MoveGen::genKingMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int square, int side) {
     u64 allies, enemies, enemyAttacks, occupancy, rawMoves;
     int rookKingStart, rookQueenStart;
 
-    allies = bb.allPositions[bb.side2play];
-    enemies = bb.allPositions[bb.side2play ^ 1];
+    allies = bb.allPositions[side];
+    enemies = bb.allPositions[side ^ 1];
     occupancy = allies | enemies;
-    enemyAttacks = cb.allPossibleAttacks[bb.side2play ^ 1];
-    rookKingStart = LookupTable::rookCastleStartSq[bb.side2play][KING_SIDE];
-    rookQueenStart = LookupTable::rookCastleStartSq[bb.side2play][QUEEN_SIDE];
+    enemyAttacks = cb.allPossibleAttacks[side ^ 1];
+    rookKingStart = LookupTable::ROOK_CASTLE_START_SQUARE[side][KING_SIDE];
+    rookQueenStart = LookupTable::ROOK_CASTLE_START_SQUARE[side][QUEEN_SIDE];
 
     rawMoves = LookupTable::kingAttacks[square];
-    cb.moves[square] = rawMoves & ~(occupancy | enemyAttacks | cb.procPositions[bb.side2play ^ 1]);
-    cb.captures[square] = cb.moves[square] & enemies & ~cb.procPositions[bb.side2play ^ 1];
+    cb.moves[square] = rawMoves & ~(occupancy | enemyAttacks | cb.procPositions[side ^ 1]);
+    cb.captures[square] = cb.moves[square] & enemies & ~cb.procPositions[side ^ 1];
 
-    // Check for castling
-    if (square != LookupTable::kingCastleStartSq[bb.side2play] || cb.checkSources[bb.side2play ^ 1]) {
-        setCastleFlag(cb, bb.side2play, KING_SIDE, false);
-        setCastleFlag(cb, bb.side2play, QUEEN_SIDE, false);
+    // Check for castling. Cannot castle if:
+    // - The castleRight masks is not set
+    // - Is undercheck
+    if (square != LookupTable::KING_CASTLE_START_SQUARE[side] || cb.checkSources[side ^ 1])
         return rawMoves;
-    }
 
     if (!(LookupTable::bitBetween[square][rookKingStart] & enemyAttacks & occupancy)
-        && (bb.castlingRights << (bb.side2play*2 + KING_SIDE))) {
-        BitManipulation::setBit(&cb.moves[square], LookupTable::kingCastleEndSq[bb.side2play][KING_SIDE]);
-        setCastleFlag(cb, bb.side2play, KING_SIDE, true);
-    } else
-        setCastleFlag(cb, bb.side2play, KING_SIDE, false);
+        && (BitManipulation::getBit(bb.castlingRights, side*2 + KING_SIDE)))
+        BitManipulation::setBit(&cb.moves[square], LookupTable::KING_CASTLE_END_SQUARE[side][KING_SIDE]);
+
     
     if (!(LookupTable::bitBetween[square][rookQueenStart] & enemyAttacks & occupancy)
-        && (bb.castlingRights << (bb.side2play*2 + QUEEN_SIDE))) {
-        BitManipulation::setBit(&cb.moves[square], LookupTable::kingCastleEndSq[bb.side2play][QUEEN_SIDE]);
-        setCastleFlag(cb, bb.side2play, QUEEN_SIDE, true);
-    } else
-        setCastleFlag(cb, bb.side2play, QUEEN_SIDE, false);
+        && (BitManipulation::getBit(bb.castlingRights, side*2 + QUEEN_SIDE)))
+        BitManipulation::setBit(&cb.moves[square], LookupTable::KING_CASTLE_END_SQUARE[side][QUEEN_SIDE]);
 
     return rawMoves;
 }
 
-void MoveGen::setCastleFlag(CalBoard& cb, int side, int castleSide, bool set) {
-    u8 setMask = 1 << (side*2 + castleSide);
- 
-    if (set) 
-        cb.castlingFlags |= setMask;
-    else
-        cb.castlingFlags &= ~setMask;
-}
-
-void MoveGen::handleCheck(BitBoard& bb, CalBoard& cb, int square, int piece) {
+void MoveGen::handleCheck(GameData::BitBoard& bb, GameData::CalBoard& cb, int square, int piece, int side) {
     u8 checkPiece;
     int checkSrcSq;
-    u64 checkSrc = cb.checkSources[bb.side2play ^ 1];
+    u64 checkSrc = cb.checkSources[side ^ 1];
 
     if (!checkSrc)
         return;
@@ -255,7 +240,7 @@ void MoveGen::handleCheck(BitBoard& bb, CalBoard& cb, int square, int piece) {
     cb.moves[square] &= checkSrc;
 
     checkSrcSq = BitManipulation::getLSSB(checkSrc);
-    checkPiece = (bb.side2play == White) ? tolower(bb.board[checkSrcSq]) : bb.board[checkSrcSq];
+    checkPiece = (side == White) ? tolower(bb.board[checkSrcSq]) : bb.board[checkSrcSq];
 
     if (checkPiece == 'r' || checkPiece == 'b' || checkPiece == 'q')
         cb.moves[square] &= LookupTable::bitBetween[square][checkSrcSq];
