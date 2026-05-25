@@ -1,0 +1,21 @@
+# All response from the engine will be seperated by "__"
+
+# Set connection to the engine
+send: uci
+recv: uciok
+
+# Set a position
+send: position <fen | startpos> [moves] [list of moves]
+recv: position__<current fen>
+e.g., position startpos
+e.g., position fen 8/5q2/r6B/6kN/pR4P1/B6r/R3p3/2K5 w - - 0 1
+e.g., positon fen 8/5q2/r6B/6kN/pR4P1/B6r/R3p3/2K5 w - - 0 1 moves d4 d5
+
+# Mainly for communication between the GUI and the backend calculation
+send: showMoves <square>
+recv: showMoves__moves__<encodeMaskBits>__captures__<encodeMaskBits>
+
+# For moving pieces on the chessboard
+send: moves [GUI] <list of moves> # The GUI flag indicate the list of moves will be in simpllier notation
+recv: moves__position__<fen after the moves> 
+e.g., moves d4 d5

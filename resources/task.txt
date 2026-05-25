@@ -1,0 +1,8 @@
+# List of tasks to be done
+
+Verify:
+- King cannot capture or go to covered square: DONE
+- Pieces can be pinned: DONE 
+- Handle check: NO 
+- CHECKMATE detected: NO 
+- Castling: NO 

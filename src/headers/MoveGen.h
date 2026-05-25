@@ -60,6 +60,7 @@ namespace MoveGen {
      * 
      * @param bb The bit board that holds the current information of the game
      * @param bishop True if the piece being evaluated is a bishop, false otherwise
+     * @param blocker True if we account for the blockers, false otherwise (used for pin detection)
      * @param square The current square the rook/bishop is on
      * @param side The side to generate moves
      * 
@@ -67,7 +68,7 @@ namespace MoveGen {
      * @note Here, we do not return directly into Calboard to avoid coupling behavior since
      *       the move calculation for the queen require calling this function twice
      */
-    maskReturn genRookBishopMove(GameData::BitBoard& bb, bool bishop, int square, int side);
+    maskReturn genRookBishopMove(GameData::BitBoard& bb, bool bishop, bool blocker, int square, int side);
 
     /**
      * @brief Masks any pinned pieces
@@ -86,8 +87,9 @@ namespace MoveGen {
      * @param allies The allies occupancy map
      * @param pinners The map of the enemies' rook-queen or bishop-queen whoese x-ray
      *                attacks reach the allies' king
+     * @param side The side to play
      */
-    void setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u64 pinners);
+    void setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u64 pinners, int side);
 
     /**
      * @brief Find the moves and captures for the king, include castling

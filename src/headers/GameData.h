@@ -11,9 +11,7 @@
 #define PAWN_DOUBLE_MOVE 6
 
 #define INVALID_MOVE 0
-#define PENDING_PROMOTE_REQUEST 1
-#define PENDING_PROMOTE_COMPLETE 2
-#define SUCCESSFUL_MOVE 3
+#define VALID_MOVE 1
 
 #define FIFTY_INITIAL 100
 
@@ -51,7 +49,6 @@ namespace GameData {
         int capture; // Which captured piece (if any)
         int promote; // Promote to what piece (if it is a promotion)
         u8 prevCastle; // The castling flag before this move
-        bool invalid; // Set to true if this move is invalid
         int status; // If this move is in the middle of calculation. Used to skip some redundant calculation
         int castleSide; // King or Queen side castling
     };
@@ -87,7 +84,7 @@ namespace GameData {
 
         u64 captures[64]; // All possible captures for each square. Reset at the begining of each ply
         u64 checkSources[2]; // Stores the sources of check for each side
-        u64 pinned; // Masks of pinned pieces
+        u64 pinned[2]; // Masks of pinned pieces on each side
         u64 allPossibleAttacks[2]; // Mask of all POSSIBLE/POTENTIAL attacks (moves + pawn's captures) for each side
         u64 allLegalMoves[2]; // All LEGAL moves for each side
         int pinSources[64]; // Store the square of the pin source for each square

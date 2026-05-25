@@ -2,6 +2,8 @@ from gui.ChessGame import ChessGame
 from uci.UCI import UCI
 import signal
 
+ERROR_MSG = "Invalid Message"
+
 def handleConsoleSend(signum, frame) -> None:
     '''Handle the event that a command is entered'''
     game.printConsole(game.command)
@@ -12,15 +14,18 @@ def handleConsoleSend(signum, frame) -> None:
 
 def handleGUIsend(signum, frame) -> None:
     '''Handle the event that a command is sent by the GUI process itself'''
-    print(f">{game.command}") # debug
     uci.send(game.command)
     response = uci.recv()
-    print(f">{response}") # debug
+    print(response) # debug
     processResponse(response)
 
 def processResponse(response: str) -> None:
     '''Process the response received from the engine'''
     tokens = response.split("__")
+
+    if tokens[0] == ERROR_MSG:
+        print(ERROR_MSG)
+        return
 
     if tokens[0] == "position":
         game.render(tokens[1], "", "")

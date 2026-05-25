@@ -6,12 +6,13 @@
 
 #include "Global.h"
 #include "Game.h"
+#include "GameData.h"
 
 #define BUFFSIZE 100
+#define ERROR_MSG "Invalid Move"
 
 /**
  * @brief Handle communication between the engine and the GUI
- * @todo Get rid of the use of C-like string and switch to std::string for safety
  */
 class UCI {
     private:
@@ -53,4 +54,29 @@ class UCI {
          * @return A response to the GUI
          */
         std::string processPosition(std::string msg);
+
+        /**
+         * @brief Move the pieces on the chess board if it is a move command
+         * @param move The move field to process
+         * @return A response to the GUI 
+         * @note The move annotation sent from the GUI will be simplier to reduce the computation strain
+         */
+        std::string processMoves(std::string move);
+
+        /**
+         * @brief Process the move sent from the GUI, which is simplier than a standard Algebraic Notation
+         * @param move The move field to process
+         * @return A response to the GUI
+         */
+        std::string processSimpleMoves(std::string move);
+
+        /**
+         * @brief Build a move information struct
+         * @param move The string that represent the move being made
+         * @param simple False if the encoded move is from-to styled, true other wise (e.g., Qh4 style)
+         * @return A struct that contains all needed information about the move
+         * @see resources/UCI/CommProtocol.txt for more information
+         */
+        GameData::MoveInfo buildMove(std::string move);
+
 };

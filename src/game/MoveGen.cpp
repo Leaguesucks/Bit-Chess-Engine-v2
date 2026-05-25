@@ -13,7 +13,7 @@ void MoveGen::initialize() {
 }
 
 void MoveGen::genMoves(GameData::BitBoard& bb, GameData::CalBoard& cb, int piece, int square, int side) {
-    u64 rawMasks, allies, enemies, bitSq, pinSrcMask, enPassenMask;
+    u64 rawAttacks, allies, enemies, bitSq, pinSrcMask, enPassenMask;
     int pinSrcSq;
     maskReturn moveMasks;
 
@@ -26,34 +26,34 @@ void MoveGen::genMoves(GameData::BitBoard& bb, GameData::CalBoard& cb, int piece
     switch (piece)
     {
     case PAWN:
-        rawMasks = genPawnMove(bb, cb, square, side);
+        rawAttacks = genPawnMove(bb, cb, square, side);
         break;
     case ROOK:
-        moveMasks = genRookBishopMove(bb, false, square, side);
+        moveMasks = genRookBishopMove(bb, false, true, square, side);
         cb.moves[square] = moveMasks.moves; 
         cb.captures[square] = moveMasks.captures;
-        rawMasks = moveMasks.rawMoves;
+        rawAttacks = moveMasks.rawMoves;
         break;
     case BISHOP:
-        moveMasks = genRookBishopMove(bb, true, square, side);
+        moveMasks = genRookBishopMove(bb, true, true, square, side);
         cb.moves[square] = moveMasks.moves; 
         cb.captures[square] = moveMasks.captures;
-        rawMasks = moveMasks.rawMoves;
+        rawAttacks = moveMasks.rawMoves;
         break;
     case QUEEN:
-        moveMasks = genRookBishopMove(bb, false, square, side);
+        moveMasks = genRookBishopMove(bb, false, true, square, side);
         cb.moves[square] = moveMasks.moves;
         cb.captures[square] = moveMasks.captures;
-        rawMasks = moveMasks.rawMoves;
-        moveMasks = genRookBishopMove(bb, true, square, side);
+        rawAttacks = moveMasks.rawMoves;
+        moveMasks = genRookBishopMove(bb, true, true, square, side);
         cb.moves[square] |= moveMasks.moves;
         cb.captures[square] |= moveMasks.captures;
-        rawMasks |= moveMasks.rawMoves;
+        rawAttacks |= moveMasks.rawMoves;
         break;
     case KNIGHT:
-        rawMasks = LookupTable::knightAttacks[square];
-        cb.captures[square] = rawMasks & enemies;
-        cb.moves[square] = rawMasks & ~allies;
+        rawAttacks = LookupTable::knightAttacks[square];
+        cb.captures[square] = rawAttacks & enemies;
+        cb.moves[square] = rawAttacks & ~allies;
         break;
     case KING:
         genKingMove(bb, cb, square, side);
@@ -65,7 +65,7 @@ void MoveGen::genMoves(GameData::BitBoard& bb, GameData::CalBoard& cb, int piece
 
     bitSq = 0ULL;
     BitManipulation::setBit(&bitSq, square);
-    if (cb.pinned & bitSq) {
+    if (cb.pinned[side] & bitSq) {
         pinSrcSq = cb.pinSources[square];
         pinSrcMask = 0ULL;
         BitManipulation::setBit(&pinSrcMask, pinSrcSq);
@@ -80,13 +80,13 @@ void MoveGen::genMoves(GameData::BitBoard& bb, GameData::CalBoard& cb, int piece
     // @note Don't forget to re-calculate checksource after each move
     if (bb.positions[side ^ 1][KING] & cb.captures[square]) // Add the check source
         BitManipulation::setBit(&cb.checkSources[side], square);
-    cb.allPossibleAttacks[side] |= rawMasks & ~allies;
-    cb.procPositions[side] |= (rawMasks & allies);
+    cb.allPossibleAttacks[side] |= rawAttacks & ~allies;
+    cb.procPositions[side] |= (rawAttacks & allies);
     cb.allLegalMoves[side] |= cb.moves[square];
 }
 
 u64 MoveGen::genPawnMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int square, int side) {
-    u64 rawMasks, moves, allies, enemies, enPassenMask;
+    u64 rawAttacks, moves, allies, enemies, enPassenMask;
     int rank, file, pRank;
 
     allies = bb.allPositions[side];
@@ -97,10 +97,13 @@ u64 MoveGen::genPawnMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int squ
     pRank = (side == White) ? 1 : 6;
 
     enPassenMask = 0ULL;
-    BitManipulation::setBit(&enPassenMask, bb.enPassen);
+    if (bb.enPassen > 0)
+        BitManipulation::setBit(&enPassenMask, bb.enPassen);
 
-    rawMasks = LookupTable::pawnAttacks[side][square];
-    cb.captures[square] = rawMasks & enemies & (~allies) & enPassenMask;
+    rawAttacks = LookupTable::pawnAttacks[side][square];
+    cb.captures[square] = rawAttacks & enemies & (~allies);
+    if (enPassenMask && cb.captures[square] & enPassenMask)
+        cb.captures[square] |= enPassenMask;
     moves = LookupTable::pawnMoves[side][square] & (~(allies | enemies));
     if (rank == pRank && moves != 0ULL) // Mannualy check for double moves
         if (side == White)
@@ -111,28 +114,29 @@ u64 MoveGen::genPawnMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int squ
     moves &= ~(allies | enemies);
     cb.moves[square] = moves;
     
-    return rawMasks;
+    return rawAttacks;
 }
 
-MoveGen::maskReturn MoveGen::genRookBishopMove(GameData::BitBoard& bb, bool bishop, int square, int side) {
-    u64 allies, enemies, revBlockers, index;
+MoveGen::maskReturn MoveGen::genRookBishopMove(GameData::BitBoard& bb, bool bishop, bool blocker, int square, int side) {
+    u64 allies, enemies, blockers, revBlockers, index;
     maskReturn sliderMasks;
 
     allies = bb.allPositions[side];
     enemies = bb.allPositions[side ^ 1];
+    blockers = (blocker) ? (allies | enemies) : 0ULL;
 
     if (bishop) {
-        revBlockers = Sliders::relevantBishopAttacks[square] & (allies | enemies);
+        revBlockers = Sliders::relevantBishopAttacks[square] & blockers;
         index = (revBlockers * LookupTable::BISHOP_MAGIC_NUMBERS[square]) >> (64 - Sliders::NUM_BISHOP_RELEVANT_SQUARES[square]);
         sliderMasks.rawMoves = LookupTable::bishopAttacks[square][index];
     } else {
-        revBlockers = Sliders::relevantRookAttacks[square] & (allies | enemies);
+        revBlockers = Sliders::relevantRookAttacks[square] & blockers;
         index = (revBlockers * LookupTable::ROOK_MAGIC_NUMBERS[square]) >> (64 - Sliders::NUM_ROOK_RELEVANT_SQUARES[square]);
         sliderMasks.rawMoves = LookupTable::rookAttacks[square][index];
     }
 
     sliderMasks.captures = sliderMasks.rawMoves & enemies;
-    sliderMasks.moves = sliderMasks.rawMoves & ~allies;
+    sliderMasks.moves = sliderMasks.rawMoves & ~allies | sliderMasks.captures;
     return sliderMasks;
 }
 
@@ -150,24 +154,23 @@ void MoveGen::setPin(GameData::BitBoard& bb, GameData::CalBoard& cb, int side) {
     kingSq = BitManipulation::getLSSB(bb.positions[side][KING]);
 
     // Mask the rook attack rays from the king square
-    sliderMasks = genRookBishopMove(bb, false, kingSq, side);
-    rookPinners = sliderMasks.moves & (enemyRooks | enemyQueens);
+    sliderMasks = genRookBishopMove(bb, false, false, kingSq, side);
+    rookPinners = sliderMasks.rawMoves & (enemyRooks | enemyQueens);
 
     // Mask the bishop attack rays from the king square
-    sliderMasks = genRookBishopMove(bb, true, kingSq, side);
-    bishopPinners = sliderMasks.moves & (enemyBishops | enemyQueens);
+    sliderMasks = genRookBishopMove(bb, true, false, kingSq, side);
+    bishopPinners = sliderMasks.rawMoves & (enemyBishops | enemyQueens);
 
     // Clean up and initialize
     cb.moves[kingSq] = 0ULL;
     cb.captures[kingSq] = 0ULL;
-    cb.pinned = 0ULL;
-    memset(cb.pinSources, 0, sizeof(cb.pinSources));
+    cb.pinned[side] = 0ULL;
 
-    setRookBishopPin(cb, kingSq, allies, rookPinners);
-    setRookBishopPin(cb, kingSq, allies, bishopPinners);
+    setRookBishopPin(cb, kingSq, allies, rookPinners, side);
+    setRookBishopPin(cb, kingSq, allies, bishopPinners, side);
 }
 
-void MoveGen::setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u64 pinners) {
+void MoveGen::setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u64 pinners, int side) {
     int square;
     u64 allyBlockers;
     
@@ -180,8 +183,8 @@ void MoveGen::setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u
         // Essentially if there is only one ally blocking the ray between the king and
         // the enemy sliders, then that ally is pinned.
         // Find out more on cool bit tricks here: https://www.geeksforgeeks.org/dsa/bit-tricks-competitive-programming/
-        if (allyBlockers & !(allyBlockers & (allyBlockers - 1))) {
-            cb.pinned |= allyBlockers;
+        if (allyBlockers && !(allyBlockers & (allyBlockers - 1))) {
+            cb.pinned[side] |= allyBlockers;
             cb.pinSources[BitManipulation::getLSSB(allyBlockers)] = square;
         }
     }

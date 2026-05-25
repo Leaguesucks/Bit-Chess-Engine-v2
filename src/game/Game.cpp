@@ -41,8 +41,9 @@ void Game::setFEN(std::string fen) {
         }
         field++;
     }
-    calculateMoves(board.side2play ^ 1); // Calculate moves for the previous side first
-    calculateMoves(board.side2play);
+    calculateMoves(board.side2play); // First calculate all POSSIBLE moves for the current side
+    calculateMoves(board.side2play ^ 1); // Then, calculate moves for the previous side
+    calculateMoves(board.side2play); // Then re-calculate for the current side against
 }
 
 std::string Game::toFEN() {
@@ -56,12 +57,13 @@ std::string Game::toFEN() {
             if (board.board[row*8 + col] == EMPTY) {
                 empty++;
             } else {
-                if (empty > 0) fen.append(std::to_string(empty));
+                if (empty > 0) 
+                    fen.append(std::to_string(empty));
                 fen.append(1, board.board[row*8 + col]);
                 empty = 0;                    
             }
 
-            if (col == 0) 
+            if (col == 0 && empty > 0) 
                 fen.append(std::to_string(empty));
         }
         (row > 0) ? fen.append("/") : fen.append(" ");
@@ -101,17 +103,12 @@ GameData::BitBoard* Game::getBoard() {
 int Game::makeMove(GameData::MoveInfo moveInfo) {
     u8 piece, pieceNum;
 
-    if (moveInfo.status == PENDING_PROMOTE_COMPLETE) {
-        postSuccessfulMove(moveInfo);
-        return SUCCESSFUL_MOVE;
-    }
-
     piece = board.board[moveInfo.from];
-    if (piece == EMPTY || moveInfo.side != board.side2play)
+    if (piece == EMPTY)
         return INVALID_MOVE;
 
     for (pieceNum = 0; pieceNum < 6; pieceNum++)
-        if (piece == PIECE_CHAR[pieceNum]) 
+        if (tolower(piece) == PIECE_CHAR[pieceNum]) 
             break;
 
     checkValidMove(moveInfo);
@@ -133,11 +130,8 @@ int Game::makeMove(GameData::MoveInfo moveInfo) {
             break;
     }
 
-    if (moveInfo.status == PENDING_PROMOTE_REQUEST)
-        return PENDING_PROMOTE_REQUEST;
-
     postSuccessfulMove(moveInfo);
-    return SUCCESSFUL_MOVE;
+    return VALID_MOVE;
 }
 
 void Game::undo() {
@@ -198,7 +192,7 @@ void Game::setEnPassen(std::string token) {
         return;
 
     int row, col;
-    row = 7 - (token[1] - '1');
+    row = token[1] - '1';
     col = 'h' - token[0]; // H1 is the LSB
 
     board.enPassen = row*8 + col;
@@ -226,7 +220,7 @@ void Game::calculateMoves(int side) {
     calBoard.checkSources[side] = 0ULL;
     calBoard.allLegalMoves[side] = 0ULL;
     for (int piece = 0; piece < 6; piece++) {
-        if ((map = board.positions[side][piece]) == 0) 
+        if ((map = board.positions[side][piece]) == 0ULL) 
             continue;
         while (map) {
             square = BitManipulation::getLSSB(map);
@@ -246,14 +240,12 @@ void Game::reset() {
 void Game::movePawn(GameData::MoveInfo& pMove) {
     int lastRank, fromRank, toRank;
 
+    if (pMove.type == PROMOTION)
+        return; // The GUI has handle the rest
+
     lastRank = (pMove.side == White) ? 7 : 0;
     fromRank = pMove.from / 8;
     toRank = pMove.to / 8;
-
-    if (toRank == lastRank) { // Pawn promotion
-        pMove.status = PENDING_PROMOTE_REQUEST;
-        return;
-    }
 
     if (abs(toRank - fromRank) == 2) {
         pMove.type = PAWN_DOUBLE_MOVE;
@@ -294,15 +286,27 @@ void Game::moveRook(GameData::MoveInfo& pMove) {
         board.castlingRights &= ~(1 << (pMove.side * 2 + QUEEN_SIDE));
 }
 
-u64 Game::encodeMove(const GameData::MoveInfo moveInfo) {
+void Game::encodeMove(const GameData::MoveInfo moveInfo) {
+    u64 encode = 0ULL;
 
-    return 0ULL;
+    encode |= moveInfo.side;
+    encode |= moveInfo.piece << 1;
+    encode |= moveInfo.from << 4;
+    encode |= moveInfo.to << 10;
+    encode |= moveInfo.type << 16;
+    encode |= moveInfo.capture << 19;
+    encode |= moveInfo.prevCastle << 22;
+    encode |= moveInfo.promote << 26;
+    
+    moveStacks.push_back(encode);
 }
 
 void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
     int enemySide = moveInfo.side ^ 1;
     int side = moveInfo.side;
+    char piece, promote;
 
+    piece = (side == White) ? toupper(PIECE_CHAR[moveInfo.piece]) : PIECE_CHAR[moveInfo.piece];
     switch (moveInfo.type)
     {
         case CAPTURE:
@@ -318,6 +322,7 @@ void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
             BitManipulation::popBit(&board.positions[side][PAWN], moveInfo.from);
             BitManipulation::setBit(&board.positions[side][moveInfo.promote], moveInfo.to);
             board.fifty = FIFTY_INITIAL;
+            promote = (side == White) ? toupper(PIECE_CHAR[moveInfo.promote]) : PIECE_CHAR[moveInfo.promote];
             break;
         case CASTLE:
             BitManipulation::popBit(&board.positions[side][ROOK], LookupTable::ROOK_CASTLE_START_SQUARE[side][moveInfo.castleSide]);
@@ -338,19 +343,24 @@ void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
     if (moveInfo.type != PROMOTION) {
         BitManipulation::popBit(&board.positions[side][moveInfo.piece], moveInfo.from);
         BitManipulation::setBit(&board.positions[side][moveInfo.piece], moveInfo.to);
+        board.board[moveInfo.from] = EMPTY;
+        board.board[moveInfo.to] = piece;
+    } else {
+        board.board[moveInfo.from] = EMPTY;
+        board.board[moveInfo.to] = promote;
     }
 
+    memset(board.allPositions, 0, sizeof(board.allPositions));
     for (int i = 0; i < 6; i++) {
-        memset(board.allPositions, 0 , sizeof(board.allPositions));
 
         board.allPositions[White] |= board.positions[White][i];
         board.allPositions[Black] |= board.positions[Black][i];
     }
 
     calculateMoves(moveInfo.side);
-    board.side2play ^= 1;
+    board.side2play = enemySide;
     board.fly++;
-    calculateMoves(board.side2play);
+    calculateMoves(enemySide);
     encodeMove(moveInfo);
 }
 
@@ -367,11 +377,14 @@ void Game::checkValidMove(GameData::MoveInfo& pMove) {
         for (capturePiece = 0; capturePiece < 6; capturePiece++)
             if (board.positions[enemySide][capturePiece] & toMask) {
                 pMove.capture = capturePiece;
+                pMove.status = VALID_MOVE;
                 return;
             }
     }
-    else if (calBoard.moves[pMove.from] & toMask)
+    else if (calBoard.moves[pMove.from] & toMask) {
         pMove.type = NORMAL;
+        pMove.status = VALID_MOVE;
+    }
     else
-        pMove.type = INVALID_MOVE;
+        pMove.status = INVALID_MOVE;
 }

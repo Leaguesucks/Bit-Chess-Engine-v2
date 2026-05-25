@@ -49,7 +49,8 @@ class Game {
         /**
          * @brief Move a piece
          * @param moveInfo Contains the source and destination square and promotion (if applied)
-         * @return The move status: ERROR, PENDING (due to promotion) or FINISHED
+         * @return The move status: ERROR, or SUCESSFUL MOVE
+         * @note We assume that most of the legal move checking has been done by the GUI
          */
         int makeMove(GameData::MoveInfo moveInfo);
 
@@ -126,10 +127,10 @@ class Game {
         void moveRook(GameData::MoveInfo& pMove);
 
         /**
+         * @brief Encode a move and push it onto the move stack
          * @param pMove The move struct to retrieve and update the move information
-         * @return The encoded move
          */
-        u64 encodeMove(const GameData::MoveInfo pMove);
+        void encodeMove(const GameData::MoveInfo pMove);
 
         /**
          * @brief Handle updating after successful move
