@@ -328,6 +328,7 @@ void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
             BitManipulation::popBit(&board.positions[side][ROOK], LookupTable::ROOK_CASTLE_START_SQUARE[side][moveInfo.castleSide]);
             BitManipulation::setBit(&board.positions[side][ROOK], LookupTable::ROOK_CASTLE_END_SQUARE[side][moveInfo.castleSide]);
             board.castlingRights &= ~(1 << (side*2 + moveInfo.castleSide));
+            board.fifty--;
             break;
         case PAWN_MOVE:
             board.fifty = FIFTY_INITIAL;
@@ -337,6 +338,7 @@ void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
             setEnPassen(side, moveInfo.to);
             break;
         default:
+            board.fifty--;
             break;
     }
 
@@ -357,9 +359,10 @@ void Game::postSuccessfulMove(const GameData::MoveInfo moveInfo) {
         board.allPositions[Black] |= board.positions[Black][i];
     }
 
+    if (moveInfo.side == Black)
+        board.fly++;
     calculateMoves(moveInfo.side);
     board.side2play = enemySide;
-    board.fly++;
     calculateMoves(enemySide);
     encodeMove(moveInfo);
 }

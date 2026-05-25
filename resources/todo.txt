@@ -1,0 +1,20 @@
+(A) 2026-05-25 Legal king moves +movegen
+    x Prevent moving into attacked squares
+    x Prevent capturing protected pieces
+
+(A) 2026-05-25 Pin detection +movegen
+    x Sliding piece pins
+    - Absolute pins during check
+
+(A) 2026-05-25 Check handling +movegen
+    - Generate evasions
+    - Detect checkmate
+    - Detect stalemate
+
+(A) 2026-05-25 Castling +movegen
+    - Verify empty squares
+    - Verify safe transit squares
+
+(B) 2026-05-25 Make/unmake move +game
+(B) 2026-05-25 Fifty-move rule +game
+(B) 2026-05-25 Threefold repetition +game
