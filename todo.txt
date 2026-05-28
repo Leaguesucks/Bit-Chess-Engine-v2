@@ -12,8 +12,8 @@
     - Detect stalemate
 
 (A) 2026-05-25 Castling +movegen
-    - Verify empty squares
-    - Verify safe transit squares
+    x Verify empty squares
+    x Verify safe transit squares
 
 (B) 2026-05-25 Make/unmake move +game
 (B) 2026-05-25 Fifty-move rule +game

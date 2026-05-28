@@ -43,7 +43,7 @@ void Game::setFEN(std::string fen) {
     }
     calculateMoves(board.side2play); // First calculate all POSSIBLE moves for the current side
     calculateMoves(board.side2play ^ 1); // Then, calculate moves for the previous side
-    calculateMoves(board.side2play); // Then re-calculate for the current side against
+    calculateMoves(board.side2play); // Then re-calculate for the current side again
 }
 
 std::string Game::toFEN() {

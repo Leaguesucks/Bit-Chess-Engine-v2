@@ -143,17 +143,17 @@ namespace LookupTable {
     };
 
     const int ROOK_CASTLE_START_SQUARE[2][2] = {
-        {A1, H1}, {A8, H8}
+        {H1, A1}, {H8, A8}
     };
 
     const int ROOK_CASTLE_END_SQUARE[2][2] = {
-        {C1, E1}, {C8, E8}
+        {F1, D1}, {F8, D8}
     };
 
-    const int KING_CASTLE_START_SQUARE[2] = {D1, D8};
+    const int KING_CASTLE_START_SQUARE[2] = {E1, E8};
 
     const int KING_CASTLE_END_SQUARE[2][2] = {
-        {B1, F1}, {B8, F8}
+        {G1, C1}, {G8, C8}
     };
 
     extern u64 bishopAttacks[64][512];

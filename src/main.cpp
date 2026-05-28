@@ -24,16 +24,19 @@ void initialize() {
 int main() {
     initialize();
 
-    // Game game("rnbqkbnr/pppp1ppp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2");
-    Game game(BEGIN);
-    UCI uci(&game);
+    Game game("r3kbnr/ppp2ppp/2np4/4pbq1/2B1P3/1PN2N2/P1PP1PPP/R1BQK2R w KQkq - 1 6");
+    printBoard(game.getCalBoard()->moves[E1], std::cerr);
+    printBoard(game.getCalBoard()->moves[E8], std::cerr);
+    std::cerr << game.toFEN() << std::endl;
+    // Game game(BEGIN);
+    // UCI uci(&game);
     // MoveGen::setPin(*game.getBoard(), *game.getCalBoard(), Black);
     // printBoard(game.getCalBoard()->pinned[Black], std::cerr);
     // printBoard(game.getCalBoard()->moves[F7], std::cerr);
 
     // std::cerr << game.makeMove(uci.buildMove("Nb1f3")) << std::endl;
 
-    uci.connect();
+    // uci.connect();
 
     // printBoard(game.getBoard()->allPositions[White], std::cerr);
     // std::cerr << game.toFEN() << std::endl;

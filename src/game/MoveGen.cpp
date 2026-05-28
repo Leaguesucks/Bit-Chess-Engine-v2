@@ -191,8 +191,8 @@ void MoveGen::setRookBishopPin(GameData::CalBoard& cb, int kingSq, u64 allies, u
 }
 
 u64 MoveGen::genKingMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int square, int side) {
-    u64 allies, enemies, enemyAttacks, occupancy, rawMoves;
-    int rookKingStart, rookQueenStart;
+    u64 allies, enemies, enemyAttacks, occupancy, rawMoves, betweenKing, betweenQueen;
+    int rookKingStart, rookQueenStart, kingEnd;
 
     allies = bb.allPositions[side];
     enemies = bb.allPositions[side ^ 1];
@@ -200,24 +200,27 @@ u64 MoveGen::genKingMove(GameData::BitBoard& bb, GameData::CalBoard& cb, int squ
     enemyAttacks = cb.allPossibleAttacks[side ^ 1];
     rookKingStart = LookupTable::ROOK_CASTLE_START_SQUARE[side][KING_SIDE];
     rookQueenStart = LookupTable::ROOK_CASTLE_START_SQUARE[side][QUEEN_SIDE];
+    kingEnd = LookupTable::KING_CASTLE_START_SQUARE[side];
+    betweenKing = LookupTable::bitBetween[square][rookKingStart];
+    betweenQueen = LookupTable::bitBetween[square][rookQueenStart - 1];
 
     rawMoves = LookupTable::kingAttacks[square];
-    cb.moves[square] = rawMoves & ~(occupancy | enemyAttacks | cb.procPositions[side ^ 1]);
+    cb.moves[square] = rawMoves & ~(allies | enemyAttacks | cb.procPositions[side ^ 1]);
     cb.captures[square] = cb.moves[square] & enemies & ~cb.procPositions[side ^ 1];
 
     // Check for castling. Cannot castle if:
     // - The castleRight masks is not set
     // - Is undercheck
-    if (square != LookupTable::KING_CASTLE_START_SQUARE[side] || cb.checkSources[side ^ 1])
+    if (square != kingEnd || cb.checkSources[side ^ 1])
         return rawMoves;
 
-    if (!(LookupTable::bitBetween[square][rookKingStart] & enemyAttacks & occupancy)
-        && (BitManipulation::getBit(bb.castlingRights, side*2 + KING_SIDE)))
+    if (!(betweenKing & enemyAttacks) && !(betweenKing & occupancy)
+        && (BitManipulation::getBit((u64) bb.castlingRights, side*2 + KING_SIDE)))
         BitManipulation::setBit(&cb.moves[square], LookupTable::KING_CASTLE_END_SQUARE[side][KING_SIDE]);
 
     
-    if (!(LookupTable::bitBetween[square][rookQueenStart] & enemyAttacks & occupancy)
-        && (BitManipulation::getBit(bb.castlingRights, side*2 + QUEEN_SIDE)))
+    if (!(betweenQueen & enemyAttacks) && !(betweenQueen & occupancy)
+        && (BitManipulation::getBit((u64) bb.castlingRights, side*2 + QUEEN_SIDE)))
         BitManipulation::setBit(&cb.moves[square], LookupTable::KING_CASTLE_END_SQUARE[side][QUEEN_SIDE]);
 
     return rawMoves;
